@@ -1,0 +1,5 @@
+{
+  "name": "BioC-Calc",
+  "description": "Ferramenta profissional para estimar o sequestro de CO2 via biochar baseada em Woolf et al. (2021).",
+  "requestFramePermissions": []
+}
