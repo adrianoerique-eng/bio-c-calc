@@ -14,7 +14,6 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
 
   // Função de impressão reforçada
   const handlePrint = () => {
-    // Pequeno timeout para garantir que a UI não trave antes de abrir o diálogo
     setTimeout(() => {
       window.print();
     }, 100);
@@ -30,14 +29,13 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     );
   }
 
-  // --- TRATAMENTO DE DADOS DO GRÁFICO (Correção de Erros) ---
+  // --- TRATAMENTO DE DADOS DO GRÁFICO ---
   const horizons = [0, 100, 500, 1000];
   const chartData = horizons.map(year => {
     const point: any = { year };
     data.scenarios.forEach(scenario => {
       const dataPoint = scenario.dataPoints.find(dp => dp.year === year);
       
-      // Safety check: Garante que é número e não NaN
       let val = 0;
       let fPerm = 0;
 
@@ -54,13 +52,13 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
 
   const colors = ['#059669', '#2563eb', '#db2777', '#d97706', '#7c3aed'];
 
-  // Dados para os cards superiores (usando o primeiro cenário como referência principal)
+  // Referência para cards superiores (apenas primeiro cenário)
   const mainScenario = data.scenarios[0];
   const mainP100 = mainScenario.dataPoints.find(p => p.year === 100);
   const mainP500 = mainScenario.dataPoints.find(p => p.year === 500);
   const mainP1000 = mainScenario.dataPoints.find(p => p.year === 1000);
 
-  // Lógica de análise técnica automática
+  // Lógica de análise técnica
   const inputs = data.inputs;
   const hcRatio = inputs.hcRatio;
   let stabilityText = "";
@@ -77,7 +75,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     stabilityText = "A razão H/C acima de 0,7 sugere um biochar produzido em temperaturas mais baixas ou tempos de residência curtos (semelhante a torrefação). A estabilidade a longo prazo é menor comparada a biochars de alta temperatura.";
   }
 
-  // Componente Tooltip Personalizado
+  // Componente Tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -124,7 +122,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     return null;
   };
 
-  // --- CONTEÚDO DO RELATÓRIO (Otimizado para Impressão) ---
+  // --- CONTEÚDO DO RELATÓRIO (Otimizado) ---
   const ReportContent = () => (
     <div className="flex flex-col text-slate-900 font-sans max-w-[210mm] mx-auto bg-white">
       
@@ -236,37 +234,56 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
          <table className="w-full text-xs border-collapse border border-slate-300">
              <thead className="bg-slate-100 print:bg-slate-200">
                 <tr>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Horizonte Temporal</th>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Temp. Solo</th>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Horizonte</th>
                    <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Permanência (%)</th>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Sequestro Total (tCO₂e)</th>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Sequestro (tCO₂e)</th>
                    <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Eficiência (tCO₂e/t)</th>
                 </tr>
              </thead>
-             <tbody>
-                <tr>
-                   <td className="border border-slate-300 px-2 py-2 text-center bg-slate-50">100 Anos</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">{((mainP100?.fPerm || 0) * 100).toFixed(1)}%</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">{mainP100?.co2Sequestered?.toFixed(2) || "0.00"}</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">
-                     {mainP100 && data.totalBiocharMass > 0 ? (mainP100.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
-                   </td>
-                </tr>
-                <tr>
-                   <td className="border border-slate-300 px-2 py-2 text-center bg-slate-50">500 Anos</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">{((mainP500?.fPerm || 0) * 100).toFixed(1)}%</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">{mainP500?.co2Sequestered?.toFixed(2) || "0.00"}</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">
-                     {mainP500 && data.totalBiocharMass > 0 ? (mainP500.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
-                   </td>
-                </tr>
-                <tr>
-                   <td className="border border-slate-300 px-2 py-2 text-center bg-slate-50">1000 Anos</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">{((mainP1000?.fPerm || 0) * 100).toFixed(1)}%</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">{mainP1000?.co2Sequestered?.toFixed(2) || "0.00"}</td>
-                   <td className="border border-slate-300 px-2 py-2 text-center">
-                     {mainP1000 && data.totalBiocharMass > 0 ? (mainP1000.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
-                   </td>
-                </tr>
+             <tbody className="divide-y divide-slate-200">
+                {data.scenarios.map((scenario) => {
+                  const p100 = scenario.dataPoints.find(p => p.year === 100);
+                  const p500 = scenario.dataPoints.find(p => p.year === 500);
+                  const p1000 = scenario.dataPoints.find(p => p.year === 1000);
+                  
+                  const fperm100 = p100?.fPerm || 0;
+                  const fperm500 = p500?.fPerm || 0;
+                  const fperm1000 = p1000?.fPerm || 0;
+
+                  const eff100 = p100 && data.totalBiocharMass > 0 ? p100.co2Sequestered / data.totalBiocharMass : 0;
+                  const eff500 = p500 && data.totalBiocharMass > 0 ? p500.co2Sequestered / data.totalBiocharMass : 0;
+                  const eff1000 = p1000 && data.totalBiocharMass > 0 ? p1000.co2Sequestered / data.totalBiocharMass : 0;
+
+                  return (
+                    <React.Fragment key={scenario.temp}>
+                      {/* 100 Anos */}
+                      <tr>
+                         <td className="border border-slate-300 px-2 py-2 text-center align-middle bg-slate-50" rowSpan={3}>
+                            {scenario.temp}°C
+                         </td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">100 Anos</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{((fperm100) * 100).toFixed(1)}%</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{p100?.co2Sequestered?.toFixed(2) || "0.00"}</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{eff100.toFixed(2)}</td>
+                      </tr>
+                      {/* 500 Anos */}
+                      <tr>
+                         <td className="border border-slate-300 px-2 py-2 text-center">500 Anos</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{((fperm500) * 100).toFixed(1)}%</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{p500?.co2Sequestered?.toFixed(2) || "0.00"}</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{eff500.toFixed(2)}</td>
+                      </tr>
+                      {/* 1000 Anos */}
+                      <tr>
+                         <td className="border border-slate-300 px-2 py-2 text-center">1000 Anos</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{((fperm1000) * 100).toFixed(1)}%</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{p1000?.co2Sequestered?.toFixed(2) || "0.00"}</td>
+                         <td className="border border-slate-300 px-2 py-2 text-center">{eff1000.toFixed(2)}</td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
              </tbody>
          </table>
       </div>
@@ -277,10 +294,10 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
          <div className="text-[10px] text-slate-500 leading-tight text-justify space-y-1">
             <p>
                Este cálculo utiliza o modelo de Woolf et al. (2021) "Greenhouse Gas Inventory Model for Biochar Additions to Soil". 
-               A estabilidade é determinada pela razão molar H/Corg e pela temperatura média do solo ({mainScenario.temp}°C neste cenário principal).
+               A estabilidade é determinada pela razão molar H/Corg e pela temperatura média do solo ({data.scenarios.map(s => s.temp + '°C').join(', ')}).
             </p>
             <p className="font-mono bg-slate-50 p-1 inline-block text-[9px] border border-slate-200 rounded mt-1">
-                Eq. Permanência: Fperm = Chc + Mhc × (H/C)
+                Eq. Permanência: Fperm = Chc - Mhc × (H/Corg)
             </p>
          </div>
       </div>
