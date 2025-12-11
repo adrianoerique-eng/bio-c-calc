@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import InputForm from './components/InputForm.tsx';
-import ResultsDashboard from './components/ResultsDashboard.tsx';
+import InputForm from './components/InputForm';
+import ResultsDashboard from './components/ResultsDashboard';
 import { CalculatorInputs, CalculationResult } from './types';
 import { calculateSequestration } from './services/woolfModel';
 import { saveResearchData } from './services/databaseService';

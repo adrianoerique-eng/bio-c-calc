@@ -30,21 +30,29 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     );
   }
 
+  // --- TRATAMENTO DE DADOS DO GRÁFICO (Correção de Erros) ---
   const horizons = [0, 100, 500, 1000];
   const chartData = horizons.map(year => {
     const point: any = { year };
     data.scenarios.forEach(scenario => {
       const dataPoint = scenario.dataPoints.find(dp => dp.year === year);
+      
+      // Safety check: Garante que é número e não NaN
+      let val = 0;
+      let fPerm = 0;
+
       if (dataPoint) {
-        point[`temp_${scenario.temp}`] = Number(dataPoint.co2Sequestered.toFixed(2));
-        // Armazena fPerm também para uso no tooltip
-        point[`fPerm_${scenario.temp}`] = dataPoint.fPerm;
+         val = Number(dataPoint.co2Sequestered) || 0;
+         fPerm = Number(dataPoint.fPerm) || 0;
       }
+
+      point[`temp_${scenario.temp}`] = Number(val.toFixed(2));
+      point[`fPerm_${scenario.temp}`] = fPerm;
     });
     return point;
   });
 
-  const colors = ['#059669', '#2563eb', '#db2777', '#d97706'];
+  const colors = ['#059669', '#2563eb', '#db2777', '#d97706', '#7c3aed'];
 
   // Dados para os cards superiores (usando o primeiro cenário como referência principal)
   const mainScenario = data.scenarios[0];
@@ -116,186 +124,179 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     return null;
   };
 
-  // --- CONTEÚDO DO RELATÓRIO (Reutilizável) ---
+  // --- CONTEÚDO DO RELATÓRIO (Otimizado para Impressão) ---
   const ReportContent = () => (
-    <>
-      <div className="flex flex-col h-auto pb-12"> {/* Removido h-full e justify-between, adicionado pb-12 */}
-        
-        {/* Header Centralizado - SEM LOGOS */}
-        <div className="text-center border-b-2 border-slate-800 pb-6 mb-6 bg-white pt-2">
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-widest mb-1">
-              RELATÓRIO TÉCNICO
-            </h1>
-            <p className="text-sm text-slate-500 font-medium">
-              Emitido em: {new Date().toLocaleDateString()}
-            </p>
-        </div>
-
-        {/* Resumo do Projeto */}
-        <div className="mb-6">
-           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-4">1. Identificação do Projeto</h2>
-           
-           {/* Bloco 1: Dados do Estudante/Pesquisa (Estilo Caixa Branca) */}
-           <div className="bg-white p-4 rounded border border-slate-200 mb-4 text-sm">
-               <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                  {/* Coluna Esquerda */}
-                  <div className="space-y-4">
-                      <div>
-                          <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider mb-1">Estudante</span>
-                          <div className="text-slate-900 font-normal">{inputs.studentName}</div>
-                      </div>
-                      <div>
-                          <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider mb-1">Orientador</span>
-                          <div className="text-slate-900 font-normal">{inputs.advisorName}</div>
-                      </div>
-                      <div>
-                          <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider mb-1">Título da Pesquisa</span>
-                          <div className="text-slate-900 font-normal leading-snug">{inputs.researchTitle}</div>
-                      </div>
-                  </div>
-
-                  {/* Coluna Direita */}
-                  <div className="space-y-4">
-                      <div>
-                          <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider mb-1">Nível</span>
-                          <div className="text-slate-900 font-normal">{inputs.level}</div>
-                      </div>
-                      <div>
-                          <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider mb-1">Instituição</span>
-                          <div className="text-slate-900 font-normal">{inputs.institution}</div>
-                      </div>
-                      <div>
-                          <span className="font-semibold text-slate-600 block text-[10px] uppercase tracking-wider mb-1">Localização</span>
-                          <div className="text-slate-900 font-normal">{inputs.city && inputs.state ? `${inputs.city} - ${inputs.state}` : '-'}</div>
-                      </div>
-                  </div>
-               </div>
-           </div>
-
-           {/* Bloco 2: Dados da Amostra (Estilo Caixa Branca) */}
-           <div className="bg-white p-4 rounded border border-slate-200 mb-2">
-               <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                  <div>
-                      <span className="font-semibold text-slate-600 text-xs uppercase block mb-1">ID da Amostra</span> 
-                      <span className="text-slate-900 font-normal text-sm">{inputs.sampleName}</span>
-                  </div>
-                  <div>
-                      <span className="font-semibold text-slate-600 text-xs uppercase block mb-1">Tipo de Biomassa</span> 
-                      <span className="text-slate-900 font-normal text-sm">{inputs.biomassType}</span>
-                  </div>
-                  <div>
-                      <span className="font-semibold text-slate-600 text-xs uppercase block mb-1">Massa de Biochar</span> 
-                      <span className="text-slate-900 font-normal text-sm">{data.totalBiocharMass.toFixed(2)} toneladas</span>
-                  </div>
-                  <div>
-                      <span className="font-semibold text-slate-600 text-xs uppercase block mb-1">Temp. Pirólise (Est.)</span> 
-                      <span className="text-slate-900 font-normal text-sm">{inputs.pyrolysisTemp}°C</span>
-                  </div>
-               </div>
-           </div>
-           
-           <div className={`text-[10px] italic mt-2 px-1 flex items-center gap-1 ${inputs.dataAuthorization ? 'text-emerald-700' : 'text-slate-500'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${inputs.dataAuthorization ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-              {inputs.dataAuthorization 
-                ? "A amostra foi autorizada a ser incluída na biblioteca de biochars do NPCO₂."
-                : "A amostra não foi autorizada a ser incluída na biblioteca de biochars do NPCO₂."}
-           </div>
-        </div>
-
-        {/* Caracterização */}
-        <div className="mb-6">
-           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-4">2. Caracterização Físico-Química</h2>
-           <div className="grid grid-cols-3 gap-6 mb-4">
-               <div className="border border-slate-200 p-3 rounded text-center">
-                  <div className="text-xs text-slate-500 uppercase">Teor de Carbono</div>
-                  <div className="text-xl font-bold text-slate-800">{inputs.carbonContent}%</div>
-               </div>
-               <div className="border border-slate-200 p-3 rounded text-center">
-                  <div className="text-xs text-slate-500 uppercase">Razão H/C (molar)</div>
-                  <div className="text-xl font-bold text-slate-800">{inputs.hcRatio}</div>
-               </div>
-               <div className="border border-slate-200 p-3 rounded text-center">
-                  <div className="text-xs text-slate-500 uppercase">Estabilidade</div>
-                  <div className={`text-xl font-bold ${stabilityLevel === 'Alta' ? 'text-emerald-700' : 'text-slate-800'}`}>{stabilityLevel}</div>
-               </div>
-           </div>
-           <p className="text-xs text-slate-600 text-justify leading-relaxed bg-white border-l-2 border-slate-300 pl-3">
-              {stabilityText}
-           </p>
-        </div>
-
-        {/* Metodologia */}
-        <div className="mb-6">
-           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-4">3. Metodologia de Cálculo</h2>
-           <div className="text-xs text-slate-600 space-y-2">
-              <p>O cálculo de sequestro baseia-se no modelo de Woolf et al. (2021), seguindo as equações:</p>
-              <div className="grid grid-cols-2 gap-4 my-3">
-                 <div className="bg-slate-50 p-3 rounded border border-slate-200 font-mono text-center">
-                    Sequestro = M<sub>biochar</sub> × %C<sub>org</sub> × (44/12) × F<sub>perm</sub>
-                 </div>
-                 <div className="bg-slate-50 p-3 rounded border border-slate-200 font-mono text-center">
-                    F<sub>perm</sub> = C<sub>hc</sub> + M<sub>hc</sub> × (H/C)
-                 </div>
-              </div>
-              <p className="text-justify">
-                 Onde <strong>F<sub>perm</sub></strong> representa a fração de carbono remanescente após 100, 500 ou 1000 anos (permanência). Os coeficientes <strong>C<sub>hc</sub></strong> e <strong>M<sub>hc</sub></strong> são utilizados conforme metodologia proposta por Woolf et al. (2021).
-              </p>
-           </div>
-        </div>
-
-        {/* Tabela de Resultados */}
-        <div className="mb-6">
-           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-4">4. Resultados Consolidados</h2>
-           <table className="w-full text-sm border-collapse border border-slate-300">
-               <thead className="bg-slate-100">
-                  <tr>
-                     <th className="border border-slate-300 px-3 py-2 text-center">Horizonte Temporal</th>
-                     <th className="border border-slate-300 px-3 py-2 text-center">Coeficiente de Permanência</th>
-                     <th className="border border-slate-300 px-3 py-2 text-center">Sequestro Total (tCO₂e)</th>
-                     <th className="border border-slate-300 px-3 py-2 text-center">Eficiência (tCO₂e / t Biochar)</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  <tr>
-                     <td className="border border-slate-300 px-3 py-2 text-center">100 Anos</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">{((mainP100?.fPerm || 0) * 100).toFixed(1)}%</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">{mainP100?.co2Sequestered.toFixed(2)}</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">
-                       {mainP100 && data.totalBiocharMass > 0 ? (mainP100.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
-                     </td>
-                  </tr>
-                  <tr>
-                     <td className="border border-slate-300 px-3 py-2 text-center">500 Anos</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">{((mainP500?.fPerm || 0) * 100).toFixed(1)}%</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">{mainP500?.co2Sequestered.toFixed(2)}</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">
-                       {mainP500 && data.totalBiocharMass > 0 ? (mainP500.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
-                     </td>
-                  </tr>
-                  <tr>
-                     <td className="border border-slate-300 px-3 py-2 text-center">1000 Anos</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">{((mainP1000?.fPerm || 0) * 100).toFixed(1)}%</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">{mainP1000?.co2Sequestered.toFixed(2)}</td>
-                     <td className="border border-slate-300 px-3 py-2 text-center">
-                       {mainP1000 && data.totalBiocharMass > 0 ? (mainP1000.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
-                     </td>
-                  </tr>
-               </tbody>
-           </table>
-        </div>
-
-        {/* Footer com margens corrigidas e layout natural */}
-        <div className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-end px-8 pb-4">
-           <div className="text-[10px] text-slate-400">
-              <p>BioC-Calc v1.0.0</p>
-              <p>Este relatório é uma estimativa baseada em modelos científicos.</p>
-           </div>
-           <div className="text-[10px] text-right text-slate-500 font-bold mr-6">
-              NPCO2/UFERSA & LAPIS/IFCE
-           </div>
-        </div>
+    <div className="flex flex-col text-slate-900 font-sans max-w-[210mm] mx-auto bg-white">
+      
+      {/* Header Centralizado */}
+      <div className="text-center border-b-2 border-slate-900 pb-4 mb-6 pt-2">
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-widest mb-1">
+            RELATÓRIO TÉCNICO
+          </h1>
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
+            BioC-Calc • Estimativa de Sequestro de Carbono
+          </p>
+          <p className="text-[10px] text-slate-400 mt-1">
+            Emitido em: {new Date().toLocaleDateString()}
+          </p>
       </div>
-    </>
+
+      {/* Resumo do Projeto */}
+      <div className="mb-6 break-inside-avoid">
+         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3 flex items-center gap-2">
+            1. Identificação do Projeto
+         </h2>
+         
+         <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm shadow-sm print:shadow-none print:border-slate-300">
+             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="space-y-3">
+                    <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Estudante</span>
+                        <div className="font-semibold text-slate-800">{inputs.studentName || '-'}</div>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Orientador</span>
+                        <div className="text-slate-800">{inputs.advisorName || '-'}</div>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Título</span>
+                        <div className="text-slate-800 leading-snug text-xs">{inputs.researchTitle || '-'}</div>
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Nível</span>
+                        <div className="text-slate-800">{inputs.level}</div>
+                      </div>
+                       <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">ID Amostra</span>
+                        <div className="font-semibold text-slate-800">{inputs.sampleName}</div>
+                      </div>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Instituição</span>
+                        <div className="text-slate-800">{inputs.institution || '-'}</div>
+                    </div>
+                     <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Localização</span>
+                        <div className="text-slate-800">{inputs.city && inputs.state ? `${inputs.city} - ${inputs.state}` : '-'}</div>
+                    </div>
+                </div>
+             </div>
+             
+             <div className="mt-4 pt-3 border-t border-slate-200 grid grid-cols-2 gap-4">
+                <div>
+                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Biomassa</span>
+                   <div className="text-slate-800 font-medium">{inputs.biomassType}</div>
+                </div>
+                 <div>
+                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Massa Biochar</span>
+                   <div className="text-slate-800 font-medium">{data.totalBiocharMass.toFixed(2)} toneladas</div>
+                </div>
+             </div>
+
+             <div className={`text-[10px] italic mt-3 px-2 py-1 rounded bg-white border border-slate-100 flex items-center gap-1.5 ${inputs.dataAuthorization ? 'text-emerald-700' : 'text-slate-500'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${inputs.dataAuthorization ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+                {inputs.dataAuthorization 
+                  ? "Amostra autorizada para inclusão na biblioteca científica do NPCO₂."
+                  : "Amostra não autorizada para biblioteca pública."}
+             </div>
+         </div>
+      </div>
+
+      {/* Caracterização */}
+      <div className="mb-6 break-inside-avoid">
+         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3">2. Caracterização Físico-Química</h2>
+         
+         <div className="grid grid-cols-3 gap-4 mb-3">
+             <div className="bg-white border border-slate-200 p-3 rounded text-center shadow-sm print:shadow-none print:border-slate-300">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Carbono (%)</div>
+                <div className="text-lg font-bold text-slate-900">{inputs.carbonContent}%</div>
+             </div>
+             <div className="bg-white border border-slate-200 p-3 rounded text-center shadow-sm print:shadow-none print:border-slate-300">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Razão H/C</div>
+                <div className="text-lg font-bold text-slate-900">{inputs.hcRatio}</div>
+             </div>
+             <div className="bg-white border border-slate-200 p-3 rounded text-center shadow-sm print:shadow-none print:border-slate-300">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Estabilidade</div>
+                <div className={`text-lg font-bold ${stabilityLevel === 'Alta' ? 'text-emerald-700' : 'text-slate-900'}`}>{stabilityLevel}</div>
+             </div>
+         </div>
+         
+         <div className="text-xs text-slate-600 text-justify leading-relaxed bg-slate-50 p-3 rounded border border-slate-200 print:bg-white print:border-l-4 print:border-l-emerald-500 print:border-y-0 print:border-r-0 print:rounded-none">
+            {stabilityText}
+         </div>
+      </div>
+
+      {/* Resultados Consolidados */}
+      <div className="mb-6 break-inside-avoid">
+         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3">3. Resultados Consolidados</h2>
+         <table className="w-full text-xs border-collapse border border-slate-300">
+             <thead className="bg-slate-100 print:bg-slate-200">
+                <tr>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Horizonte Temporal</th>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Permanência (%)</th>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Sequestro Total (tCO₂e)</th>
+                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Eficiência (tCO₂e/t)</th>
+                </tr>
+             </thead>
+             <tbody>
+                <tr>
+                   <td className="border border-slate-300 px-2 py-2 text-center font-medium bg-slate-50">100 Anos</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center">{((mainP100?.fPerm || 0) * 100).toFixed(1)}%</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center font-bold">{mainP100?.co2Sequestered?.toFixed(2) || "0.00"}</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center">
+                     {mainP100 && data.totalBiocharMass > 0 ? (mainP100.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
+                   </td>
+                </tr>
+                <tr>
+                   <td className="border border-slate-300 px-2 py-2 text-center font-medium bg-slate-50">500 Anos</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center">{((mainP500?.fPerm || 0) * 100).toFixed(1)}%</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center font-bold">{mainP500?.co2Sequestered?.toFixed(2) || "0.00"}</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center">
+                     {mainP500 && data.totalBiocharMass > 0 ? (mainP500.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
+                   </td>
+                </tr>
+                <tr>
+                   <td className="border border-slate-300 px-2 py-2 text-center font-medium bg-slate-50">1000 Anos</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center">{((mainP1000?.fPerm || 0) * 100).toFixed(1)}%</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center font-bold">{mainP1000?.co2Sequestered?.toFixed(2) || "0.00"}</td>
+                   <td className="border border-slate-300 px-2 py-2 text-center">
+                     {mainP1000 && data.totalBiocharMass > 0 ? (mainP1000.co2Sequestered / data.totalBiocharMass).toFixed(2) : '-'}
+                   </td>
+                </tr>
+             </tbody>
+         </table>
+      </div>
+
+      {/* Metodologia Footer */}
+      <div className="mb-2 break-inside-avoid">
+         <h2 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-1 mb-2">4. Base Metodológica</h2>
+         <div className="text-[10px] text-slate-500 leading-tight text-justify space-y-1">
+            <p>
+               Este cálculo utiliza o modelo de Woolf et al. (2021) "Greenhouse Gas Inventory Model for Biochar Additions to Soil". 
+               A estabilidade é determinada pela razão molar H/Corg e pela temperatura média do solo ({mainScenario.temp}°C neste cenário principal).
+            </p>
+            <p className="font-mono bg-slate-50 p-1 inline-block text-[9px] border border-slate-200 rounded mt-1">
+                Eq. Permanência: Fperm = Chc + Mhc × (H/C)
+            </p>
+         </div>
+      </div>
+
+      {/* Footer Assinatura */}
+      <div className="mt-8 pt-4 border-t-2 border-slate-800 flex justify-between items-end break-inside-avoid">
+         <div className="text-[9px] text-slate-400">
+            <p>BioC-Calc - Ferramenta de Suporte à Decisão</p>
+            <p>Calculado em: {new Date().toLocaleString()}</p>
+         </div>
+         <div className="text-right">
+            <div className="text-xs font-bold text-slate-800 uppercase">NPCO2/UFERSA & LAPIS/IFCE</div>
+            <div className="text-[9px] text-slate-500">Documento gerado automaticamente.</div>
+         </div>
+      </div>
+    </div>
   );
 
   return (
@@ -328,7 +329,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
               <div className="flex flex-col items-center justify-center pt-4 md:pt-0">
                   <span className="text-emerald-400 font-bold text-sm mb-2">100 Anos</span>
                   <div className="text-4xl font-bold">
-                      {mainP100?.co2Sequestered.toFixed(2)}
+                      {mainP100?.co2Sequestered?.toFixed(2) || "0.00"}
                   </div>
                   <span className="text-xs text-slate-400 mt-1">tCO₂e</span>
               </div>
@@ -337,7 +338,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
               <div className="flex flex-col items-center justify-center pt-4 md:pt-0">
                   <span className="text-blue-400 font-bold text-sm mb-2">500 Anos</span>
                   <div className="text-4xl font-bold">
-                      {mainP500?.co2Sequestered.toFixed(2)}
+                      {mainP500?.co2Sequestered?.toFixed(2) || "0.00"}
                   </div>
                   <span className="text-xs text-slate-400 mt-1">tCO₂e</span>
               </div>
@@ -346,7 +347,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
               <div className="flex flex-col items-center justify-center pt-4 md:pt-0">
                   <span className="text-purple-400 font-bold text-sm mb-2">1000 Anos</span>
                   <div className="text-4xl font-bold">
-                      {mainP1000?.co2Sequestered.toFixed(2)}
+                      {mainP1000?.co2Sequestered?.toFixed(2) || "0.00"}
                   </div>
                   <span className="text-xs text-slate-400 mt-1">tCO₂e</span>
               </div>
@@ -542,7 +543,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
             <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0 z-50">
                <div>
                  <h2 className="text-lg font-bold text-slate-800">Visualizar Relatório</h2>
-                 <p className="text-xs text-slate-500">Revise o documento antes de imprimir.</p>
+                 <p className="text-xs text-slate-500">Este layout simula a folha A4.</p>
                </div>
                <div className="flex gap-3">
                   <button 
@@ -574,8 +575,8 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
         </div>
       )}
 
-      {/* --- HIDDEN PRINT ELEMENT (Always present for window.print() to grab) --- */}
-      <div className="hidden print-only bg-white text-slate-900 p-8 max-w-[210mm] mx-auto">
+      {/* --- HIDDEN PRINT ELEMENT --- */}
+      <div className="hidden print-only bg-white text-slate-900 w-full h-auto">
         <ReportContent />
       </div>
     </>
