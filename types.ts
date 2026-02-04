@@ -28,7 +28,7 @@ export enum AcademicLevel {
 export interface CalculatorInputs {
   // Metadados do Projeto
   studentName: string;
-  level: AcademicLevel; // Novo campo
+  level: AcademicLevel;
   researchTitle: string;
   advisorName: string;
   institution: string;
@@ -38,13 +38,14 @@ export interface CalculatorInputs {
   
   // Dados de Entrada
   biomassType: BiomassType;
-  isDirectBiocharInput: boolean; // Novo: Define se input é massa final ou matéria prima
-  massInput: number; // Toneladas (pode ser Feedstock ou Biochar dependendo da flag)
-  biocharYield: number; // % (Relevante apenas se !isDirectBiocharInput)
-  pyrolysisTemp: number; // °C
-  carbonContent: number; // %
+  isDirectBiocharInput: boolean;
+  massInput: number;
+  biocharYield: number;
+  pyrolysisTemp: number;
+  carbonContent: number;
   hcRatio: number; // Razão Molar H/Corg
-  selectedSoilTemps: number[]; // Lista de temperaturas de solo
+  ocRatio: number; // Novo: Razão Molar O/Corg
+  selectedSoilTemps: number[];
   
   // Termos
   dataAuthorization: boolean;
@@ -52,14 +53,14 @@ export interface CalculatorInputs {
 
 export interface TimePoint {
   year: number;
-  fPerm: number; // Fração de permanência (0-1)
-  co2Sequestered: number; // tCO2e
+  fPerm: number;
+  co2Sequestered: number;
 }
 
 export interface SoilTempScenario {
   temp: number;
-  chc: number; // Coeficiente usado (para auditoria)
-  mhc: number; // Coeficiente usado (para auditoria)
+  chc: number;
+  mhc: number;
   dataPoints: TimePoint[]; 
 }
 
@@ -68,5 +69,5 @@ export interface CalculationResult {
   scenarios: SoilTempScenario[];
   totalBiocharMass: number;
   totalCarbonMass: number;
-  efficiencyRatio: number; // tCO2e / t Biochar (para 100 anos no cenário principal)
+  efficiencyRatio: number;
 }

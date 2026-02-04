@@ -8,7 +8,17 @@
   }
 }
 
-/* Estilos de Impressão */
+/* O conteúdo para o PDF fica renderizado, mas fora da visão do usuário */
+.print-content-container {
+    position: fixed;
+    left: -500mm;
+    top: 0;
+    width: 210mm;
+    background: white;
+    z-index: -1000;
+}
+
+/* Estilos de Impressão Nativa (Fallback) */
 @media print {
   @page {
     margin: 0;
@@ -23,21 +33,32 @@
     height: auto !important;
   }
   
-  /* Garante que o relatório ocupe a página inteira corretamente */
   .print-only {
       display: block !important;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      min-height: 100vh;
-      z-index: 9999;
-      background: white;
-      padding: 15mm; /* Margem de segurança */
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      z-index: 99999 !important;
+      background: white !important;
+      padding: 10mm !important;
+      visibility: visible !important;
   }
   
-  /* Esconde todo o resto */
-  .no-print, nav, footer, .modal-backdrop {
+  .print-content-container.print-only {
+      position: relative !important;
+      left: 0 !important;
+      top: 0 !important;
+      visibility: visible !important;
+  }
+  
+  .no-print, 
+  nav, 
+  footer, 
+  [role="dialog"],
+  .fixed,
+  button {
       display: none !important;
   }
 }
@@ -50,4 +71,13 @@
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+.modal-fade-in {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }

@@ -1,600 +1,559 @@
-import React, { useState } from 'react';
-import { CalculationResult } from '../types';
+import React, { useState, useEffect } from 'react';
+import { CalculationResult, CalculatorInputs } from '../types';
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  ScatterChart, Scatter, ZAxis, ReferenceArea, Label
 } from 'recharts';
-import { Sparkles, Calculator, Clock, FileText, Table2, Printer, Eye, X } from 'lucide-react';
+import { Sparkles, Calculator, Clock, Printer, Eye, X, Activity, TrendingUp, ClipboardCheck } from 'lucide-react';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 interface ResultsDashboardProps {
   data: CalculationResult | null;
 }
 
+const VanKrevelenDiagram = ({ inputs, isReport = false }: { inputs: CalculatorInputs, isReport?: boolean }) => {
+  const { hcRatio, ocRatio } = inputs;
+  const vanKleveData = [{ x: ocRatio, y: hcRatio }];
+
+  return (
+    <div className="w-full flex flex-col gap-4">
+      <div className={`w-full ${isReport ? 'h-[200px]' : 'h-[300px]'} relative`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={isReport ? { top: 10, right: 15, bottom: 45, left: 65 } : { top: 15, right: 25, bottom: 60, left: 55 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            
+            <ReferenceArea x1={0} x2={0.4} y1={0.4} y2={0.7} fill="#e0f2fe" fillOpacity={0.5}>
+               <Label 
+                 value="crédito elegível" 
+                 position="insideTop" 
+                 offset={5}
+                 style={{ fontSize: '7px', fontWeight: 500, fill: '#0369a1', pointerEvents: 'none' }} 
+               />
+            </ReferenceArea>
+            
+            <ReferenceArea x1={0} x2={0.4} y1={0} y2={0.4} fill="#dcfce7" fillOpacity={0.7}>
+               <Label 
+                 value="biochar WBC premium" 
+                 position="insideBottom" 
+                 offset={5}
+                 style={{ fontSize: '7px', fontWeight: 500, fill: '#15803d', pointerEvents: 'none' }} 
+               />
+            </ReferenceArea>
+
+            <XAxis 
+              type="number" 
+              dataKey="x" 
+              name="O/C" 
+              domain={[0, 1.2]} 
+              ticks={[0, 0.4, 0.8, 1.2]}
+              fontSize={10}
+              tick={{ fill: '#0f172a', fontWeight: 600 }}
+              stroke="#0f172a"
+              axisLine={{ stroke: '#0f172a', strokeWidth: 2 }}
+              tickLine={{ stroke: '#0f172a', strokeWidth: 1.5 }}
+            >
+              <Label 
+                value="Razão O/C" 
+                offset={isReport ? -15 : -35} 
+                position="insideBottom" 
+                style={{ textAnchor: 'middle', fontSize: 10, fontWeight: 900, fill: '#0f172a' }} 
+              />
+            </XAxis>
+            <YAxis 
+              type="number" 
+              dataKey="y" 
+              name="H/C" 
+              domain={[0, 1.2]} 
+              ticks={[0, 0.4, 0.8, 1.2]}
+              fontSize={10}
+              tick={{ fill: '#0f172a', fontWeight: 600 }}
+              stroke="#0f172a"
+              axisLine={{ stroke: '#0f172a', strokeWidth: 2 }}
+              tickLine={{ stroke: '#0f172a', strokeWidth: 1.5 }}
+              tickMargin={isReport ? 4 : 8}
+              width={isReport ? 60 : 60}
+            >
+              <Label 
+                value="Razão H/C" 
+                angle={-90} 
+                position="insideLeft" 
+                offset={isReport ? -50 : -45}
+                style={{ textAnchor: 'middle', fontSize: 10, fontWeight: 900, fill: '#0f172a' }} 
+              />
+            </YAxis>
+            <ZAxis type="number" range={[140, 140]} />
+            <Scatter name="Amostra" data={vanKleveData} fill="#ef4444" shape="circle" />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+const TechnicalAnalysisCard = ({ inputs }: { inputs: CalculatorInputs }) => {
+  const { hcRatio, biomassType, carbonContent } = inputs;
+  
+  let level = "Baixa";
+  let colorClass = "text-amber-600";
+  let barColor = "bg-amber-500";
+  let stabilityDesc = "A razão H/C acima de 0,7 indica um biochar com baixo grau de carbonização, mantendo muitas características da biomassa original e apresentando menor resistência à degradação biológica no solo.";
+  
+  if (hcRatio <= 0.4) {
+    level = "Alta";
+    colorClass = "text-emerald-600";
+    barColor = "bg-emerald-500";
+    stabilityDesc = "A razão H/C abaixo de 0,4 indica um biochar altamente condensado e aromático, típico de pirólise em altas temperaturas. Este material apresenta máxima resistência à degradação biológica no solo.";
+  } else if (hcRatio <= 0.7) {
+    level = "Média";
+    colorClass = "text-blue-600";
+    barColor = "bg-blue-500";
+    stabilityDesc = "A razão H/C entre 0,4 e 0,7 indica um biochar com estabilidade moderada. O material possui estrutura carbonizada desenvolvida, mas ainda contém frações passíveis de degradação lenta ao longo de décadas.";
+  }
+
+  const progressWidth = Math.max(0, Math.min(100, (1.2 - hcRatio) / 1.2 * 100));
+
+  return (
+    <div className="bg-slate-50/50 border border-slate-200 rounded-3xl p-8">
+      <div className="flex items-center gap-3 text-slate-800 font-black uppercase tracking-widest text-sm mb-8">
+        <ClipboardCheck className="w-6 h-6 text-emerald-600" />
+        ANÁLISE TÉCNICA DO BIOCHAR
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-slate-600 leading-relaxed text-sm">
+        <div className="text-justify">
+          <p>
+            <span className="font-bold text-slate-800 block mb-1 uppercase tracking-tighter">Caracterização</span>
+            O biochar analisado, proveniente de {biomassType}, apresenta um teor de carbono de {carbonContent}% e uma razão H/C molar de {hcRatio.toFixed(2)}.
+          </p>
+        </div>
+        <div className="text-justify">
+          <p>
+            <span className="font-bold text-slate-800 block mb-1 uppercase tracking-tighter">Estabilidade ({level})</span>
+            {stabilityDesc}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <div className="w-full max-w-2xl bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            <div className="md:col-span-2 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Estabilidade Química</span>
+                <span className={`text-sm font-black ${colorClass}`}>{level}</span>
+              </div>
+              <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                 <div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${progressWidth}%` }} />
+              </div>
+            </div>
+            <div className="flex flex-col items-center md:items-end justify-center">
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Razão H/C</span>
+               <span className="text-2xl font-black text-slate-800 tabular-nums">{hcRatio.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TemporalChartReport = ({ data, isReport = false }: { data: CalculationResult, isReport?: boolean }) => {
+  const horizons = [0, 100, 500, 1000];
+  const chartLineColors = ['#059669', '#2563eb', '#db2777', '#d97706', '#7c3aed'];
+  
+  const chartData = horizons.map(year => {
+    const point: any = { year };
+    data.scenarios.forEach(scenario => {
+      const dataPoint = scenario.dataPoints.find(dp => dp.year === year);
+      point[`temp_${scenario.temp}`] = Number((dataPoint?.co2Sequestered || 0).toFixed(2));
+    });
+    return point;
+  });
+
+  return (
+    <div className={`w-full ${isReport ? 'h-[160px]' : 'h-[320px]'} relative`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={isReport ? { top: 10, right: 15, left: 65, bottom: 45 } : { top: 15, right: 25, left: 55, bottom: 60 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          <XAxis 
+            dataKey="year" 
+            stroke="#0f172a" 
+            fontSize={10} 
+            tickFormatter={(v) => `${v}a`}
+            tick={{ fill: '#0f172a', fontWeight: 600 }}
+            axisLine={{ stroke: '#0f172a', strokeWidth: 2 }}
+            tickLine={{ stroke: '#0f172a', strokeWidth: 1.5 }}
+          >
+            <Label 
+              value="Tempo (Anos)" 
+              offset={isReport ? -15 : -35} 
+              position="insideBottom" 
+              style={{ textAnchor: 'middle', fontSize: 10, fontWeight: 900, fill: '#0f172a' }} 
+            />
+          </XAxis>
+          <YAxis 
+            stroke="#0f172a" 
+            fontSize={10} 
+            tick={{ fill: '#0f172a', fontWeight: 600 }} 
+            axisLine={{ stroke: '#0f172a', strokeWidth: 2 }}
+            tickLine={{ stroke: '#0f172a', strokeWidth: 1.5 }}
+            tickMargin={isReport ? 4 : 8}
+            width={isReport ? 60 : 60}
+          >
+            <Label 
+              value="Sequestro (tCO₂e)" 
+              angle={-90} 
+              position="insideLeft" 
+              offset={isReport ? -50 : -45}
+              style={{ textAnchor: 'middle', fontSize: 10, fontWeight: 900, fill: '#0f172a' }} 
+            />
+          </YAxis>
+          <Legend 
+            verticalAlign="top" 
+            align="right" 
+            iconType="circle" 
+            iconSize={6}
+            wrapperStyle={isReport ? { fontSize: '8px', paddingBottom: '0px', fontWeight: 700, top: 0 } : { fontSize: '10px', paddingBottom: '15px', fontWeight: 700 }} 
+          />
+          {data.scenarios.map((scenario, idx) => (
+            <Line 
+              key={scenario.temp} 
+              name={`${scenario.temp}°C`} 
+              type="monotone" 
+              dataKey={`temp_${scenario.temp}`} 
+              stroke={chartLineColors[idx % chartLineColors.length]} 
+              strokeWidth={1.5} 
+              dot={{ r: 2, fill: chartLineColors[idx % chartLineColors.length] }} 
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+const ReportContent = ({ data }: { data: CalculationResult }) => {
+  const { inputs, scenarios } = data;
+  const { hcRatio } = inputs;
+
+  let stabilityLevel = hcRatio <= 0.4 ? "Alta" : hcRatio <= 0.7 ? "Média" : "Baixa";
+  let stabilityText = stabilityLevel === "Alta" 
+    ? "Alta Estabilidade: Razão H/C ≤ 0,4 indica biochar altamente condensado." 
+    : stabilityLevel === "Média" 
+    ? "Estabilidade Moderada: Razão H/C entre 0,4 e 0,7 sugere degradação lenta." 
+    : "Baixa Estabilidade: Razão H/C > 0,7 indica baixo grau de carbonização.";
+
+  return (
+    <div className="flex flex-col text-slate-900 font-sans max-w-[210mm] mx-auto bg-white min-h-[270mm] p-2">
+      <div className="text-center border-b-2 border-slate-900 pb-4 mb-6 pt-2">
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-widest mb-1">RELATÓRIO TÉCNICO</h1>
+          <p className="text-[10px] text-slate-400 mt-1">Gerado em: {new Date().toLocaleDateString()} às {new Date().toLocaleTimeString()}</p>
+      </div>
+
+      <div className="mb-6 break-inside-avoid">
+         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3 flex items-center gap-2">
+           <Calculator className="w-3 h-3" /> 1. Identificação do Projeto
+         </h2>
+         <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-[10px] bg-slate-50 p-4 rounded-lg border border-slate-100">
+            <div className="flex justify-between border-b border-slate-200 pb-1">
+                <span className="font-bold text-slate-500 uppercase tracking-tight">AMOSTRA:</span>
+                <span className="text-slate-800 font-normal uppercase">{inputs.sampleName}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200 pb-1">
+                <span className="font-bold text-slate-500 uppercase tracking-tight">BIOMASSA:</span>
+                <span className="text-slate-800 font-normal uppercase">{inputs.biomassType}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200 pb-1">
+                <span className="font-bold text-slate-500 uppercase tracking-tight">ESTUDANTE:</span>
+                <span className="text-slate-800 font-normal uppercase">{inputs.studentName || '-'}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200 pb-1">
+                <span className="font-bold text-slate-500 uppercase tracking-tight">TEMP PIRÓLISE (°C):</span>
+                <span className="text-slate-800 font-normal uppercase">{inputs.pyrolysisTemp}°C</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200 pb-1">
+                <span className="font-bold text-slate-500 uppercase tracking-tight">ORIENTADOR:</span>
+                <span className="text-slate-800 font-normal uppercase">{inputs.advisorName || '-'}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200 pb-1">
+                <span className="font-bold text-slate-500 uppercase tracking-tight">INSTITUIÇÃO:</span>
+                <span className="text-slate-800 font-normal uppercase">{inputs.institution || '-'}</span>
+            </div>
+         </div>
+      </div>
+
+      <div className="mb-6 break-inside-avoid">
+         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-4 flex items-center gap-2">
+           <Activity className="w-3 h-3" /> 2. Análise Técnica e Modelagem
+         </h2>
+         <div className="grid grid-cols-2 gap-8 mb-6 text-[10px] leading-relaxed">
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+               <span className="font-bold text-emerald-800 block mb-1 uppercase tracking-tight">Decaimento Temporal</span>
+               <p className="text-slate-600 text-justify">Projeção fundamentada conforme Woolf et al. (2021).</p>
+               <div className="flex gap-2 mt-2 font-normal text-slate-800">
+                  <span className="font-bold text-slate-500 uppercase">Carbono Orgânico:</span> <span>{inputs.carbonContent}%</span>
+               </div>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+               <span className="font-bold text-emerald-800 block mb-1 uppercase tracking-tight">Estabilidade</span>
+               <p className="text-slate-600 text-justify">{stabilityText}</p>
+               <div className="flex gap-4 mt-2 font-normal text-slate-800">
+                  <div className="flex gap-1"><span className="font-bold text-slate-500 uppercase">H/C:</span> {inputs.hcRatio}</div>
+                  <div className="flex gap-1"><span className="font-bold text-slate-500 uppercase">O/C:</span> {inputs.ocRatio}</div>
+               </div>
+            </div>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            <div className="border border-slate-100 rounded-lg p-0.5 bg-white shadow-sm flex flex-col justify-center overflow-visible">
+                <span className="text-[7px] font-bold text-slate-400 uppercase mb-0.5 text-center block">Projeção Temporal</span>
+                <TemporalChartReport data={data} isReport={true} />
+            </div>
+            <div className="border border-slate-100 rounded-lg p-0.5 bg-white shadow-sm flex flex-col justify-center overflow-visible">
+                <span className="text-[7px] font-bold text-slate-400 uppercase mb-0.5 text-center block">Van Krevelen</span>
+                <VanKrevelenDiagram inputs={inputs} isReport={true} />
+            </div>
+         </div>
+      </div>
+
+      <div className="mb-6 break-inside-avoid">
+         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-3 h-3" /> 3. Resultados Consolidados
+         </h2>
+         <table className="w-full text-[10px] border-collapse">
+             <thead>
+                <tr className="bg-slate-900 text-white">
+                   <th className="border border-slate-800 px-3 py-2 text-center font-bold">Temperatura Solo</th>
+                   <th className="border border-slate-800 px-3 py-2 text-center font-bold">Horizonte Temporal</th>
+                   <th className="border border-slate-800 px-3 py-2 text-center font-bold">Fator Permanência</th>
+                   <th className="border border-slate-800 px-3 py-2 text-center font-bold">Sequestro (tCO₂e)</th>
+                </tr>
+             </thead>
+             <tbody>
+                {scenarios.map((scenario) => {
+                  const pts = scenario.dataPoints.filter(p => p.year !== 0);
+                  return pts.map((p, pIdx) => (
+                    <tr key={`${scenario.temp}-${p.year}`} className={pIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        {pIdx === 0 && (
+                           <td className="border border-slate-200 px-3 py-2 text-center align-middle font-bold text-slate-700" rowSpan={3}>
+                             {scenario.temp}°C
+                           </td>
+                        )}
+                        <td className="border border-slate-200 px-3 py-2 text-center font-normal">
+                           {p.year} Anos
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-center font-normal">
+                           {(p.fPerm * 100).toFixed(1)}%
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-center text-slate-900 font-normal">
+                           {p.co2Sequestered.toFixed(3)}
+                        </td>
+                    </tr>
+                  ));
+                })}
+             </tbody>
+         </table>
+      </div>
+
+      <div className="mt-auto border-t border-slate-100 pt-4 flex flex-col items-center justify-center gap-1">
+         <span className="text-[10px] font-semibold text-slate-700 uppercase tracking-tight">NPCO2/UFERSA & LAPIS/IFCE</span>
+         <span className="text-[9px] text-slate-400">© 2026 BioC-Calc. Todos os direitos reservados.</span>
+      </div>
+    </div>
+  );
+};
+
 const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
   const [showPreview, setShowPreview] = useState(false);
 
-  // Função de impressão reforçada
-  const handlePrint = () => {
-    setTimeout(() => {
+  useEffect(() => {
+    if (showPreview) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [showPreview]);
+
+  const handlePrint = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const element = document.querySelector('.print-content-container');
+    if (!element || !data) {
       window.print();
-    }, 100);
+      return;
+    }
+
+    const opt = {
+      margin: 10,
+      filename: `Relatorio-Biochar-${data.inputs.sampleName.replace(/\s+/g, '-')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        letterRendering: true,
+        logging: false
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Falha ao gerar arquivo PDF, tentando impressão nativa:", err);
+      window.print();
+    }
   };
 
   if (!data) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-slate-400 p-12 bg-white rounded-3xl border border-dashed border-slate-300 shadow-sm no-print">
         <Sparkles className="w-12 h-12 mb-4 text-slate-300" />
-        <p className="text-lg text-center font-medium text-slate-600">BioC-Calc</p>
-        <p className="text-sm text-center mt-2 max-w-xs text-slate-400">Preencha os parâmetros de entrada para visualizar a projeção de sequestro de carbono.</p>
+        <p className="text-lg text-center font-medium text-slate-600 uppercase tracking-tight">BioC-Calc</p>
+        <p className="text-sm text-center mt-2 max-w-xs text-slate-400">Insira os dados técnicos para gerar a análise.</p>
       </div>
     );
   }
 
-  // --- TRATAMENTO DE DADOS DO GRÁFICO ---
-  const horizons = [0, 100, 500, 1000];
-  const chartData = horizons.map(year => {
-    const point: any = { year };
-    data.scenarios.forEach(scenario => {
-      const dataPoint = scenario.dataPoints.find(dp => dp.year === year);
-      
-      let val = 0;
-      let fPerm = 0;
-
-      if (dataPoint) {
-         val = Number(dataPoint.co2Sequestered) || 0;
-         fPerm = Number(dataPoint.fPerm) || 0;
-      }
-
-      point[`temp_${scenario.temp}`] = Number(val.toFixed(2));
-      point[`fPerm_${scenario.temp}`] = fPerm;
-    });
-    return point;
-  });
-
-  const colors = ['#059669', '#2563eb', '#db2777', '#d97706', '#7c3aed'];
-
-  // Referência para cards superiores (apenas primeiro cenário)
-  const mainScenario = data.scenarios[0];
-  const mainP100 = mainScenario.dataPoints.find(p => p.year === 100);
-  const mainP500 = mainScenario.dataPoints.find(p => p.year === 500);
-  const mainP1000 = mainScenario.dataPoints.find(p => p.year === 1000);
-
-  // Lógica de análise técnica
-  const inputs = data.inputs;
-  const hcRatio = inputs.hcRatio;
-  let stabilityText = "";
-  let stabilityLevel = "";
-  
-  if (hcRatio <= 0.4) {
-    stabilityLevel = "Alta";
-    stabilityText = "A razão H/C abaixo de 0,4 indica um biochar altamente condensado e aromático, típico de pirólise em altas temperaturas. Este material apresenta máxima resistência à degradação biológica no solo.";
-  } else if (hcRatio <= 0.7) {
-    stabilityLevel = "Média";
-    stabilityText = "A razão H/C entre 0,4 e 0,7 indica um grau moderado de carbonização. O material possui estruturas aromáticas estáveis, mas retém frações alifáticas que podem ser mineralizadas mais rapidamente nos primeiros séculos.";
-  } else {
-    stabilityLevel = "Baixa";
-    stabilityText = "A razão H/C acima de 0,7 sugere um biochar produzido em temperaturas mais baixas ou tempos de residência curtos (semelhante a torrefação). A estabilidade a longo prazo é menor comparada a biochars de alta temperatura.";
-  }
-
-  // Componente Tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white/95 backdrop-blur p-4 border border-slate-200 shadow-xl rounded-xl text-xs z-50 outline-none min-w-[200px]">
-          <p className="font-bold text-slate-700 mb-3 border-b border-slate-100 pb-2 text-center text-sm">
-            Horizonte: <span className="text-slate-900">{label} Anos</span>
-          </p>
-          <div className="space-y-4">
-            {payload.map((entry: any, index: number) => {
-              const temp = entry.dataKey.toString().replace('temp_', '');
-              const fPerm = entry.payload[`fPerm_${temp}`];
-
-              return (
-                <div key={index}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div 
-                      className="w-2.5 h-2.5 rounded-full shadow-sm" 
-                      style={{ backgroundColor: entry.color }} 
-                    />
-                    <span className="font-bold text-slate-700 text-sm">{entry.name}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 pl-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Sequestro</span>
-                      <span className="font-mono text-sm font-bold text-slate-700">
-                        {Number(entry.value).toFixed(2)} <span className="text-[10px] text-slate-400 font-sans">tCO₂e</span>
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Permanência</span>
-                      <span className="font-mono text-sm font-bold text-slate-700">
-                        {(fPerm * 100).toFixed(1)} <span className="text-[10px] text-slate-400 font-sans">%</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // --- CONTEÚDO DO RELATÓRIO (Otimizado) ---
-  const ReportContent = () => (
-    <div className="flex flex-col text-slate-900 font-sans max-w-[210mm] mx-auto bg-white">
-      
-      {/* Header Centralizado */}
-      <div className="text-center border-b-2 border-slate-900 pb-4 mb-6 pt-2">
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-widest mb-1">
-            RELATÓRIO TÉCNICO
-          </h1>
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
-            BioC-Calc • Estimativa de Sequestro de Carbono
-          </p>
-          <p className="text-[10px] text-slate-400 mt-1">
-            Emitido em: {new Date().toLocaleDateString()}
-          </p>
-      </div>
-
-      {/* Resumo do Projeto */}
-      <div className="mb-6 break-inside-avoid">
-         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3 flex items-center gap-2">
-            1. Identificação do Projeto
-         </h2>
-         
-         <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm shadow-sm print:shadow-none print:border-slate-300">
-             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                <div className="space-y-3">
-                    <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Estudante</span>
-                        <div className="text-slate-800">{inputs.studentName || '-'}</div>
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Orientador</span>
-                        <div className="text-slate-800">{inputs.advisorName || '-'}</div>
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Título</span>
-                        <div className="text-slate-800 leading-snug text-xs">{inputs.researchTitle || '-'}</div>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Nível</span>
-                        <div className="text-slate-800">{inputs.level}</div>
-                      </div>
-                       <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">ID Amostra</span>
-                        <div className="text-slate-800">{inputs.sampleName}</div>
-                      </div>
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Instituição</span>
-                        <div className="text-slate-800">{inputs.institution || '-'}</div>
-                    </div>
-                     <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Localização</span>
-                        <div className="text-slate-800">{inputs.city && inputs.state ? `${inputs.city} - ${inputs.state}` : '-'}</div>
-                    </div>
-                </div>
-             </div>
-             
-             <div className="mt-4 pt-3 border-t border-slate-200 grid grid-cols-2 gap-4">
-                <div>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Biomassa</span>
-                   <div className="text-slate-800">{inputs.biomassType}</div>
-                </div>
-                 <div>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Massa Biochar</span>
-                   <div className="text-slate-800">{data.totalBiocharMass.toFixed(2)} toneladas</div>
-                </div>
-             </div>
-
-             <div className={`text-[10px] italic mt-3 px-2 py-1 rounded bg-white border border-slate-100 flex items-center gap-1.5 ${inputs.dataAuthorization ? 'text-emerald-700' : 'text-slate-500'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${inputs.dataAuthorization ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-                {inputs.dataAuthorization 
-                  ? "Amostra autorizada para inclusão na biblioteca científica do NPCO₂."
-                  : "Amostra não autorizada para biblioteca pública."}
-             </div>
-         </div>
-      </div>
-
-      {/* Caracterização */}
-      <div className="mb-6 break-inside-avoid">
-         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3">2. Caracterização Físico-Química</h2>
-         
-         <div className="grid grid-cols-3 gap-4 mb-3">
-             <div className="bg-white border border-slate-200 p-3 rounded text-center shadow-sm print:shadow-none print:border-slate-300">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Carbono (%)</div>
-                <div className="text-lg text-slate-900">{inputs.carbonContent}%</div>
-             </div>
-             <div className="bg-white border border-slate-200 p-3 rounded text-center shadow-sm print:shadow-none print:border-slate-300">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Razão H/C</div>
-                <div className="text-lg text-slate-900">{inputs.hcRatio}</div>
-             </div>
-             <div className="bg-white border border-slate-200 p-3 rounded text-center shadow-sm print:shadow-none print:border-slate-300">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Estabilidade</div>
-                <div className={`text-lg ${stabilityLevel === 'Alta' ? 'text-emerald-700' : 'text-slate-900'}`}>{stabilityLevel}</div>
-             </div>
-         </div>
-         
-         <div className="text-xs text-slate-600 text-justify leading-relaxed bg-slate-50 p-3 rounded border border-slate-200 print:bg-white print:border-l-4 print:border-l-emerald-500 print:border-y-0 print:border-r-0 print:rounded-none">
-            {stabilityText}
-         </div>
-      </div>
-
-      {/* Resultados Consolidados */}
-      <div className="mb-6 break-inside-avoid">
-         <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 border-b border-emerald-100 pb-1 mb-3">3. Resultados Consolidados</h2>
-         <table className="w-full text-xs border-collapse border border-slate-300">
-             <thead className="bg-slate-100 print:bg-slate-200">
-                <tr>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Temp. Solo</th>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Horizonte</th>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Permanência (%)</th>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Sequestro (tCO₂e)</th>
-                   <th className="border border-slate-300 px-2 py-2 text-center text-slate-700 font-bold">Eficiência (tCO₂e/t)</th>
-                </tr>
-             </thead>
-             <tbody className="divide-y divide-slate-200">
-                {data.scenarios.map((scenario) => {
-                  const p100 = scenario.dataPoints.find(p => p.year === 100);
-                  const p500 = scenario.dataPoints.find(p => p.year === 500);
-                  const p1000 = scenario.dataPoints.find(p => p.year === 1000);
-                  
-                  const fperm100 = p100?.fPerm || 0;
-                  const fperm500 = p500?.fPerm || 0;
-                  const fperm1000 = p1000?.fPerm || 0;
-
-                  const eff100 = p100 && data.totalBiocharMass > 0 ? p100.co2Sequestered / data.totalBiocharMass : 0;
-                  const eff500 = p500 && data.totalBiocharMass > 0 ? p500.co2Sequestered / data.totalBiocharMass : 0;
-                  const eff1000 = p1000 && data.totalBiocharMass > 0 ? p1000.co2Sequestered / data.totalBiocharMass : 0;
-
-                  return (
-                    <React.Fragment key={scenario.temp}>
-                      {/* 100 Anos */}
-                      <tr>
-                         <td className="border border-slate-300 px-2 py-2 text-center align-middle bg-slate-50" rowSpan={3}>
-                            {scenario.temp}°C
-                         </td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">100 Anos</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{((fperm100) * 100).toFixed(1)}%</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{p100?.co2Sequestered?.toFixed(2) || "0.00"}</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{eff100.toFixed(2)}</td>
-                      </tr>
-                      {/* 500 Anos */}
-                      <tr>
-                         <td className="border border-slate-300 px-2 py-2 text-center">500 Anos</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{((fperm500) * 100).toFixed(1)}%</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{p500?.co2Sequestered?.toFixed(2) || "0.00"}</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{eff500.toFixed(2)}</td>
-                      </tr>
-                      {/* 1000 Anos */}
-                      <tr>
-                         <td className="border border-slate-300 px-2 py-2 text-center">1000 Anos</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{((fperm1000) * 100).toFixed(1)}%</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{p1000?.co2Sequestered?.toFixed(2) || "0.00"}</td>
-                         <td className="border border-slate-300 px-2 py-2 text-center">{eff1000.toFixed(2)}</td>
-                      </tr>
-                    </React.Fragment>
-                  );
-                })}
-             </tbody>
-         </table>
-      </div>
-
-      {/* Metodologia Footer */}
-      <div className="mb-2 break-inside-avoid">
-         <h2 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-1 mb-2">4. Base Metodológica</h2>
-         <div className="text-[10px] text-slate-500 leading-tight text-justify space-y-1">
-            <p>
-               Este cálculo utiliza o modelo de Woolf et al. (2021) "Greenhouse Gas Inventory Model for Biochar Additions to Soil". 
-               A estabilidade é determinada pela razão molar H/Corg e pela temperatura média do solo ({data.scenarios.map(s => s.temp + '°C').join(', ')}).
-            </p>
-            <p className="font-mono bg-slate-50 p-1 inline-block text-[9px] border border-slate-200 rounded mt-1">
-                Eq. Permanência: Fperm = Chc - Mhc × (H/Corg)
-            </p>
-         </div>
-      </div>
-
-      {/* Footer Assinatura */}
-      <div className="mt-8 pt-4 border-t-2 border-slate-800 flex justify-between items-end break-inside-avoid">
-         <div className="text-[9px] text-slate-400">
-            <p>BioC-Calc - Ferramenta de Suporte à Decisão</p>
-            <p>Calculado em: {new Date().toLocaleString()}</p>
-         </div>
-         <div className="text-right">
-            <div className="text-xs font-bold text-slate-800 uppercase">NPCO2/UFERSA & LAPIS/IFCE</div>
-            <div className="text-[9px] text-slate-500">Documento gerado automaticamente.</div>
-         </div>
-      </div>
-    </div>
-  );
+  const isMultiTemp = data.scenarios.length > 1;
 
   return (
     <>
-      <div className="space-y-6 animate-fade-in no-print">
-        
-        {/* Header com botão de preview */}
-        <div className="flex justify-between items-center">
-           <div></div> {/* Spacer */}
+      <div className="space-y-6 animate-fade-in no-print relative">
+        <div className="flex justify-end items-center">
            <button 
              type="button"
              onClick={() => setShowPreview(true)}
-             className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors shadow-sm cursor-pointer"
+             className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-700 transition-all shadow-lg shadow-slate-200 cursor-pointer z-40 active:scale-95"
            >
              <Eye className="w-4 h-4" />
-             Relatório (.pdf)
+             Visualizar Relatório
            </button>
         </div>
 
-        {/* Cards de Métricas - Layout Unificado de 3 Colunas */}
-        <div className="bg-slate-800 text-white rounded-2xl shadow-xl shadow-slate-200 p-6">
-          <div className="flex items-center gap-2 mb-6 border-b border-slate-700 pb-4">
+        <div className="bg-slate-800 text-white rounded-3xl shadow-2xl p-8">
+          <div className="flex items-center gap-2 mb-8 border-b border-slate-700 pb-5">
               <Calculator className="w-5 h-5 text-emerald-400" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">Sequestro Total Estimado</h2>
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-300">
+                Sequestro Estimado ({isMultiTemp ? 'Multitemperatura' : `${data.scenarios[0].temp}°C`})
+              </h2>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-700">
-              
-              {/* 100 Anos */}
               <div className="flex flex-col items-center justify-center pt-4 md:pt-0">
-                  <span className="text-emerald-400 font-bold text-sm mb-2">100 Anos</span>
-                  <div className="text-4xl font-bold">
-                      {mainP100?.co2Sequestered?.toFixed(2) || "0.00"}
+                  <span className="text-emerald-400 font-black text-[11px] uppercase tracking-wider mb-4">100 Anos</span>
+                  <div className={`flex items-center ${isMultiTemp ? 'flex-row flex-wrap justify-center gap-6' : 'flex-col'}`}>
+                    {data.scenarios.map((scenario) => {
+                      const p = scenario.dataPoints.find(dp => dp.year === 100);
+                      return (
+                        <div key={scenario.temp} className="flex flex-col items-center">
+                          {isMultiTemp && <span className="text-[10px] text-slate-500 uppercase font-black mb-1">{scenario.temp}°C</span>}
+                          <div className={`${isMultiTemp ? 'text-2xl' : 'text-4xl'} font-black tabular-nums`}>{p?.co2Sequestered?.toFixed(2) || "0.00"}</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="text-xs text-slate-400 mt-1">tCO₂e</span>
+                  <span className="text-[10px] text-slate-500 mt-2 font-bold tracking-widest">tCO₂e</span>
               </div>
 
-              {/* 500 Anos */}
-              <div className="flex flex-col items-center justify-center pt-4 md:pt-0">
-                  <span className="text-blue-400 font-bold text-sm mb-2">500 Anos</span>
-                  <div className="text-4xl font-bold">
-                      {mainP500?.co2Sequestered?.toFixed(2) || "0.00"}
+              <div className="flex flex-col items-center justify-center pt-4 md:pt-0 px-2">
+                  <span className="text-blue-400 font-black text-[11px] uppercase tracking-wider mb-4">500 Anos</span>
+                  <div className={`flex items-center ${isMultiTemp ? 'flex-row flex-wrap justify-center gap-6' : 'flex-col'}`}>
+                    {data.scenarios.map((scenario) => {
+                      const p = scenario.dataPoints.find(dp => dp.year === 500);
+                      return (
+                        <div key={scenario.temp} className="flex flex-col items-center">
+                          {isMultiTemp && <span className="text-[10px] text-slate-500 uppercase font-black mb-1">{scenario.temp}°C</span>}
+                          <div className={`${isMultiTemp ? 'text-2xl' : 'text-4xl'} font-black tabular-nums`}>{p?.co2Sequestered?.toFixed(2) || "0.00"}</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="text-xs text-slate-400 mt-1">tCO₂e</span>
+                  <span className="text-[10px] text-slate-500 mt-2 font-bold tracking-widest">tCO₂e</span>
               </div>
 
-              {/* 1000 Anos */}
               <div className="flex flex-col items-center justify-center pt-4 md:pt-0">
-                  <span className="text-purple-400 font-bold text-sm mb-2">1000 Anos</span>
-                  <div className="text-4xl font-bold">
-                      {mainP1000?.co2Sequestered?.toFixed(2) || "0.00"}
+                  <span className="text-purple-400 font-black text-[11px] uppercase tracking-wider mb-4">1000 Anos</span>
+                  <div className={`flex items-center ${isMultiTemp ? 'flex-row flex-wrap justify-center gap-6' : 'flex-col'}`}>
+                    {data.scenarios.map((scenario) => {
+                      const p = scenario.dataPoints.find(dp => dp.year === 1000);
+                      return (
+                        <div key={scenario.temp} className="flex flex-col items-center">
+                          {isMultiTemp && <span className="text-[10px] text-slate-500 uppercase font-black mb-1">{scenario.temp}°C</span>}
+                          <div className={`${isMultiTemp ? 'text-2xl' : 'text-4xl'} font-black tabular-nums`}>{p?.co2Sequestered?.toFixed(2) || "0.00"}</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="text-xs text-slate-400 mt-1">tCO₂e</span>
+                  <span className="text-[10px] text-slate-500 mt-2 font-bold tracking-widest">tCO₂e</span>
               </div>
-          </div>
-
-          <div className="mt-8 pt-4 border-t border-slate-700 text-center">
-              <p className="text-sm text-slate-400">
-                Volume absoluto de créditos gerados pela aplicação de <strong className="text-white">{data.totalBiocharMass.toFixed(2)}t</strong> deste biochar.
-              </p>
           </div>
         </div>
 
-        {/* Gráfico */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4 text-emerald-600" /> Projeção Temporal
-            </h3>
-          </div>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis 
-                  dataKey="year" 
-                  type="number" 
-                  domain={[0, 1000]} 
-                  ticks={[0, 100, 500, 1000]}
-                  stroke="#64748b" 
-                  tickFormatter={(v) => `${v}`}
-                  fontSize={12}
-                  label={{ 
-                    value: 'Tempo (Anos)', 
-                    position: 'insideBottom', 
-                    offset: -10, 
-                    fill: '#64748b', 
-                    fontSize: 12,
-                    fontWeight: 'bold' 
-                  }}
-                />
-                <YAxis 
-                  stroke="#64748b" 
-                  fontSize={12} 
-                  label={{ 
-                    value: 'Sequestro (tCO₂e)', 
-                    angle: -90, 
-                    position: 'insideLeft', 
-                    fill: '#64748b', 
-                    fontSize: 12,
-                    fontWeight: 'bold',
-                    style: { textAnchor: 'middle' }
-                  }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend verticalAlign="top" height={36}/>
-                {data.scenarios.map((scenario, idx) => (
-                  <Line 
-                    key={scenario.temp}
-                    name={`Temp. Solo ${scenario.temp}°C`}
-                    type="monotone" 
-                    dataKey={`temp_${scenario.temp}`} 
-                    stroke={colors[idx % colors.length]} 
-                    strokeWidth={2.5}
-                    dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
-                    activeDot={{ r: 6 }}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Tabela Simplificada */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-200">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Table2 className="w-4 h-4 text-emerald-600" />
-                DETALHAMENTO
+        <div className="flex flex-col gap-6">
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-8 flex items-center gap-3">
+                 <Clock className="w-5 h-5 text-emerald-600" /> Projeção Temporal
               </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
-              <thead className="text-xs text-slate-500 bg-slate-50">
-                <tr>
-                  <th rowSpan={2} className="px-6 py-3 border-b border-slate-200 align-middle bg-slate-50 font-bold">Cenário (Solo)</th>
-                  <th colSpan={3} className="px-2 py-2 text-center border-b border-slate-200 border-x border-slate-200 bg-slate-50 font-bold">Permanência</th>
-                  <th colSpan={3} className="px-2 py-2 text-center border-b border-slate-200 bg-slate-50 font-bold">Eficiência de Sequestro (tCO₂e / t Biochar)</th>
-                </tr>
-                <tr>
-                  <th className="px-3 py-2 text-center border-b border-slate-200 border-l border-slate-200 bg-slate-50 font-semibold text-slate-600">100 anos</th>
-                  <th className="px-3 py-2 text-center border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">500 anos</th>
-                  <th className="px-3 py-2 text-center border-b border-slate-200 border-r border-slate-200 bg-slate-50 font-semibold text-slate-600">1000 anos</th>
-                  
-                  <th className="px-3 py-2 text-center border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">100 anos</th>
-                  <th className="px-3 py-2 text-center border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">500 anos</th>
-                  <th className="px-3 py-2 text-center border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">1000 anos</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.scenarios.map((scenario) => {
-                  const p100 = scenario.dataPoints.find(p => p.year === 100);
-                  const p500 = scenario.dataPoints.find(p => p.year === 500);
-                  const p1000 = scenario.dataPoints.find(p => p.year === 1000);
-                  
-                  const fperm100 = p100?.fPerm || 0;
-                  const fperm500 = p500?.fPerm || 0;
-                  const fperm1000 = p1000?.fPerm || 0;
-
-                  // Cálculo da Eficiência (tCO2e total / massa biochar)
-                  const eff100 = p100 && data.totalBiocharMass > 0 ? p100.co2Sequestered / data.totalBiocharMass : 0;
-                  const eff500 = p500 && data.totalBiocharMass > 0 ? p500.co2Sequestered / data.totalBiocharMass : 0;
-                  const eff1000 = p1000 && data.totalBiocharMass > 0 ? p1000.co2Sequestered / data.totalBiocharMass : 0;
-
-                  return (
-                    <tr key={scenario.temp} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-800 flex items-center gap-2">
-                          {scenario.temp}°C
-                      </td>
-                      <td className="px-2 py-4 text-center border-l border-slate-100">
-                        <span className="text-slate-600 font-medium">
-                          {(fperm100 * 100).toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-2 py-4 text-center">
-                        <span className="text-slate-600 font-medium">
-                          {(fperm500 * 100).toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-2 py-4 text-center border-r border-slate-100">
-                        <span className="text-slate-600 font-medium">
-                          {(fperm1000 * 100).toFixed(1)}%
-                        </span>
-                      </td>
-                      
-                      {/* Eficiência Columns */}
-                      <td className="px-2 py-4 text-center text-slate-600 font-medium">
-                        {eff100.toFixed(2)}
-                      </td>
-                      <td className="px-2 py-4 text-center text-slate-600 font-medium">
-                        {eff500.toFixed(2)}
-                      </td>
-                      <td className="px-2 py-4 text-center text-slate-600 font-medium">
-                        {eff1000.toFixed(2)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Análise Técnica */}
-        <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-emerald-600" />
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Análise Técnica do Biochar</h3>
+              <div className="h-[350px] w-full">
+                <TemporalChartReport data={data} isReport={false} />
+              </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-1 space-y-3">
-                  <p className="text-sm text-slate-600 leading-relaxed text-justify">
-                    <strong>Caracterização:</strong> O biochar analisado, proveniente de {inputs.biomassType}, apresenta um teor de carbono de {inputs.carbonContent}% e uma razão H/C molar de {inputs.hcRatio}.
-                  </p>
-                  <p className="text-sm text-slate-600 leading-relaxed text-justify">
-                    <strong>Estabilidade ({stabilityLevel}):</strong> {stabilityText}
-                  </p>
+
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-8 flex items-center gap-3">
+                 <Activity className="w-5 h-5 text-emerald-600" /> Van Krevelen
+              </h3>
+              <div className="max-w-4xl mx-auto">
+                <VanKrevelenDiagram inputs={data.inputs} isReport={false} />
               </div>
-              <div className="w-full md:w-1/3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span>Estabilidade Química</span>
-                      <span className={`font-bold ${stabilityLevel === 'Alta' ? 'text-emerald-600' : 'text-orange-500'}`}>{stabilityLevel}</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${stabilityLevel === 'Alta' ? 'bg-emerald-500' : stabilityLevel === 'Média' ? 'bg-blue-500' : 'bg-orange-400'}`} 
-                        style={{ width: inputs.hcRatio > 1 ? '30%' : inputs.hcRatio > 0.4 ? '60%' : '95%' }}
-                      ></div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-50">
-                      <span>Razão H/C</span>
-                      <span className="font-mono font-bold text-slate-700">{inputs.hcRatio}</span>
-                  </div>
-              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <TechnicalAnalysisCard inputs={data.inputs} />
             </div>
         </div>
       </div>
 
-      {/* --- PREVIEW MODAL --- */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 print:hidden animate-fade-in">
-          <div className="bg-slate-200 w-full max-w-5xl h-[95vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0 z-50">
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/95 backdrop-blur-xl p-4 sm:p-8 print:hidden" onClick={() => setShowPreview(false)}>
+          <div className="bg-white w-full max-w-5xl h-full max-h-[95vh] rounded-[2rem] flex flex-col shadow-2xl relative overflow-hidden modal-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-slate-50 border-b border-slate-200 px-8 py-6 flex justify-between items-center shrink-0">
                <div>
-                 <h2 className="text-lg font-bold text-slate-800">Visualizar Relatório</h2>
-                 <p className="text-xs text-slate-500">Este layout simula a folha A4.</p>
+                 <h2 className="text-xl font-black text-slate-800 tracking-tight">Visualizar Relatório</h2>
+                 <p className="text-sm text-slate-500">Este layout simula a folha A4.</p>
                </div>
-               <div className="flex gap-3">
+               <div className="flex gap-4">
                   <button 
-                    type="button"
-                    onClick={() => setShowPreview(false)}
-                    className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors text-sm flex items-center gap-2"
+                    type="button" 
+                    onClick={() => setShowPreview(false)} 
+                    className="px-5 py-2.5 text-slate-600 font-bold hover:bg-white rounded-xl transition-all text-sm flex items-center gap-2 border border-slate-200 cursor-pointer active:scale-95"
                   >
-                    <X className="w-4 h-4" />
-                    Cancelar
+                    <X className="w-4 h-4" /> Fechar
                   </button>
                   <button 
-                    type="button"
-                    onClick={handlePrint}
-                    className="px-4 py-2 bg-slate-800 text-white font-medium hover:bg-slate-700 rounded-lg transition-colors text-sm flex items-center gap-2 shadow-sm cursor-pointer"
+                    type="button" 
+                    onClick={handlePrint} 
+                    className="px-6 py-2.5 bg-emerald-600 text-white font-bold hover:bg-emerald-700 rounded-xl transition-all text-sm flex items-center gap-2 shadow-xl shadow-emerald-200 cursor-pointer active:scale-95 z-[9999]"
                   >
-                    <Printer className="w-4 h-4" />
-                    Imprimir / Salvar PDF
+                    <Printer className="w-4 h-4" /> Imprimir / PDF
                   </button>
                </div>
             </div>
-
-            {/* Modal Content - Scrollable Paper Preview */}
-            <div className="flex-1 overflow-y-auto bg-slate-200 p-8 flex justify-center">
-               <div className="bg-white shadow-xl w-[210mm] min-h-[297mm] p-12 shrink-0 origin-top transform transition-transform">
-                   <ReportContent />
+            <div className="flex-1 overflow-y-auto bg-slate-200/50 p-6 sm:p-12 flex justify-center">
+               <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-12 shrink-0 border border-slate-100">
+                   <ReportContent data={data} />
                </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- HIDDEN PRINT ELEMENT --- */}
-      <div className="hidden print-only bg-white text-slate-900 w-full h-auto">
-        <ReportContent />
+      <div className="print-content-container print-only">
+        <ReportContent data={data} />
       </div>
     </>
   );

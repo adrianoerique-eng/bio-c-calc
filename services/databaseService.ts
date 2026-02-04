@@ -1,34 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 import { CalculatorInputs } from '../types';
 
-// CONFIGURAÇÃO DO BANCO DE DADOS (SUPABASE)
-// Para produção, recomenda-se usar variáveis de ambiente (process.env.SUPABASE_URL)
-// Você deve substituir as strings abaixo pelas credenciais do seu projeto Supabase.
-const SUPABASE_URL = process.env.SUPABASE_URL || ''; 
-const SUPABASE_ANON_KEY = process.env.SUPABASE_KEY || '';
+const getEnvVar = (name: string): string => {
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[name] || '';
+    }
+  } catch (e) {}
+  return '';
+};
 
-// Inicialização segura do cliente
+const SUPABASE_URL = getEnvVar('SUPABASE_URL'); 
+const SUPABASE_ANON_KEY = getEnvVar('SUPABASE_KEY');
+
 const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) 
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
   : null;
 
 export const saveResearchData = async (inputs: CalculatorInputs, calculatedBiocharMass: number) => {
-  // 1. Verifica se o usuário autorizou
-  if (!inputs.dataAuthorization) {
-    return;
-  }
-
-  // 2. Verifica se o banco está configurado
-  if (!supabase) {
-    console.warn("BioC-Calc: Banco de dados não configurado. Dados não foram salvos.");
+  if (!inputs.dataAuthorization || !supabase) {
     return;
   }
 
   try {
-    // 3. Prepara o payload para o banco de dados
     const payload = {
       student_name: inputs.studentName,
-      level: inputs.level, // Nível acadêmico
+      level: inputs.level,
       advisor_name: inputs.advisorName,
       research_title: inputs.researchTitle,
       institution: inputs.institution,
@@ -36,31 +33,16 @@ export const saveResearchData = async (inputs: CalculatorInputs, calculatedBioch
       state: inputs.state,
       sample_id: inputs.sampleName,
       biomass_type: inputs.biomassType,
-      
-      // Dados Técnicos
       pyrolysis_temp: inputs.pyrolysisTemp,
       carbon_content: inputs.carbonContent,
       hc_ratio: inputs.hcRatio,
-      
-      // Resultados Calculados
+      oc_ratio: inputs.ocRatio,
       biochar_mass_ton: calculatedBiocharMass,
-      
-      // Metadados
       collected_at: new Date().toISOString(),
-      app_version: '1.0.0'
+      app_version: '1.2.2'
     };
 
-    // 4. Insere na tabela 'biochar_research'
-    const { data, error } = await supabase
-      .from('biochar_research')
-      .insert([payload]);
-
-    if (error) {
-      console.error('Erro ao salvar dados no NPCO2:', error);
-    } else {
-      console.log('Dados salvos com sucesso na base do NPCO2.');
-    }
-  } catch (err) {
-    console.error('Erro inesperado ao conectar ao banco:', err);
-  }
+    const { error } = await supabase.from('biochar_research').insert([payload]);
+    if (error) console.error('Supabase error:', error.message);
+  } catch (err) {}
 };

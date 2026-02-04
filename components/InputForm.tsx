@@ -3,7 +3,7 @@ import { BiomassType, CalculatorInputs, AcademicLevel } from '../types';
 import { 
   FlaskConical, Scale, ArrowRight, CheckCircle2, Thermometer, Tag, User, 
   Building2, BookOpenText, GraduationCap, MapPin,
-  Fingerprint, Map, Leaf, Weight, Atom, Orbit, Percent, Award, Flame
+  Fingerprint, Map, Leaf, Weight, Atom, Orbit, Percent, Award, Flame, Droplet
 } from 'lucide-react';
 
 interface InputFormProps {
@@ -20,13 +20,14 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
     city: '',
     state: '',
     sampleName: 'Amostra 01',
-    biomassType: BiomassType.CASHEW_SHELL, // Default regional
+    biomassType: BiomassType.CASHEW_SHELL,
     isDirectBiocharInput: true,
-    massInput: 1, // 1 ton
+    massInput: 1,
     biocharYield: 30,
     pyrolysisTemp: 500,
     carbonContent: 75.0, 
     hcRatio: 0.35,
+    ocRatio: 0.20, 
     selectedSoilTemps: [14.9],
     dataAuthorization: false
   });
@@ -60,10 +61,8 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-      
       <div className="space-y-6">
-        
-        {/* Identificação Completa */}
+        {/* Identificação do Projeto */}
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div className="flex justify-between items-center mb-3">
               <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
@@ -71,8 +70,8 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
               </h3>
           </div>
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
+            <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-8">
                   <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                     <User className="w-3 h-3 text-slate-400" /> Nome do Estudante
                   </label>
@@ -82,17 +81,17 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                     value={values.studentName}
                     onChange={(e) => handleChange('studentName', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm placeholder-slate-400 bg-white"
-                    placeholder="Seu nome completo"
+                    placeholder="Seu nome"
                   />
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-4">
                   <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                     <Award className="w-3 h-3 text-slate-400" /> Nível
                   </label>
                   <select
                     value={values.level}
                     onChange={(e) => handleChange('level', e.target.value as AcademicLevel)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm bg-white"
+                    className="w-full px-2 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm bg-white truncate"
                   >
                     {Object.values(AcademicLevel).map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
@@ -108,7 +107,7 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                 value={values.researchTitle}
                 onChange={(e) => handleChange('researchTitle', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm placeholder-slate-400 bg-white"
-                placeholder="Título do trabalho ou tese"
+                placeholder="Título do trabalho"
               />
             </div>
 
@@ -121,7 +120,7 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                 value={values.advisorName}
                 onChange={(e) => handleChange('advisorName', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm placeholder-slate-400 bg-white"
-                placeholder="Nome do professor"
+                placeholder="Nome do orientador"
               />
             </div>
 
@@ -148,7 +147,6 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                   value={values.city}
                   onChange={(e) => handleChange('city', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm placeholder-slate-400 bg-white"
-                  placeholder="Ex: Mossoró"
                 />
               </div>
               <div>
@@ -160,7 +158,6 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                   value={values.state}
                   onChange={(e) => handleChange('state', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm placeholder-slate-400 bg-white"
-                  placeholder="Ex: RN"
                 />
               </div>
             </div>
@@ -176,8 +173,7 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                     required
                     value={values.sampleName}
                     onChange={(e) => handleChange('sampleName', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm placeholder-slate-400 bg-white"
-                    placeholder="Ex: Biochar ACC"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm bg-white"
                   />
                 </div>
                 <div>
@@ -187,7 +183,7 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                   <select
                     value={values.biomassType}
                     onChange={(e) => handleChange('biomassType', e.target.value as BiomassType)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm bg-white"
+                    className="w-full px-2 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm bg-white truncate"
                   >
                     {Object.values(BiomassType).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -197,37 +193,33 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
           </div>
         </div>
 
-        {/* Produção: Massa */}
+        {/* Massa */}
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative overflow-hidden">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
                   <Scale className="w-4 h-4 text-emerald-600" /> Massa
                </h3>
-               
-               {/* Toggle Switch */}
                <div className="flex bg-slate-200 p-1 rounded-lg">
                   <button
                     type="button"
                     onClick={() => handleChange('isDirectBiocharInput', false)}
                     className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${!values.isDirectBiocharInput ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
-                    Biomassa Bruta
+                    Biomassa
                   </button>
                   <button
                     type="button"
                     onClick={() => handleChange('isDirectBiocharInput', true)}
                     className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${values.isDirectBiocharInput ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
-                    Biochar Pronto
+                    Biochar
                   </button>
                </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-1">
                   <label className="block text-[10px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                     <Weight className="w-3 h-3 text-slate-400" />
-                     {values.isDirectBiocharInput ? 'Qtd. Biochar (t)' : 'Qtd. Biomassa (t)'}
+                     <Weight className="w-3 h-3 text-slate-400" /> {values.isDirectBiocharInput ? 'Qtd. Biochar (t)' : 'Qtd. Biomassa (t)'}
                   </label>
                   <input
                     type="number"
@@ -235,74 +227,62 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                     min="0"
                     value={values.massInput}
                     onChange={(e) => handleChange('massInput', Number(e.target.value))}
-                    className="w-full px-2 py-2 rounded border border-slate-300 text-sm focus:ring-emerald-500 text-slate-700"
+                    className="w-full px-2 py-2 rounded border border-slate-300 text-sm focus:ring-emerald-500 font-normal"
                   />
                 </div>
-                
-                {/* Se for Biochar direto, esconde yield, se for biomassa, mostra */}
-                {!values.isDirectBiocharInput ? (
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                        <Percent className="w-3 h-3 text-slate-400" /> Rendimento (%)
-                      </label>
+                <div className="col-span-1">
+                   {!values.isDirectBiocharInput ? (
+                     <>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Rendimento (%)</label>
                       <input
                         type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
                         value={values.biocharYield}
                         onChange={(e) => handleChange('biocharYield', Number(e.target.value))}
-                        className="w-full px-2 py-2 rounded border border-slate-300 text-sm focus:ring-emerald-500"
+                        className="w-full px-2 py-2 rounded border border-slate-300 text-sm font-normal"
                       />
-                    </div>
-                ) : (
-                    <div className="col-span-1">
-                        {/* Phantom label for alignment */}
-                         <label className="block text-[10px] font-semibold text-transparent mb-1 flex items-center gap-1 select-none">
-                            <span className="w-3 h-3" /> .
-                         </label>
-                        <div className="flex items-center h-[38px]">
-                            <div className="text-[10px] text-slate-400 italic leading-snug">Massa final seca pronta para aplicação.</div>
-                        </div>
-                    </div>
-                )}
-            </div>
-            
-            {!values.isDirectBiocharInput && (
-                <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center">
-                   <span className="text-[10px] text-slate-500">Massa Final Estimada:</span>
-                   <span className="text-sm font-bold text-emerald-700">
-                     {(values.massInput * (values.biocharYield/100)).toFixed(2)} t
-                   </span>
+                     </>
+                   ) : (
+                     <div className="flex items-end h-full pb-2">
+                        <span className="text-[9px] text-slate-400 italic">Massa final seca para aplicação.</span>
+                     </div>
+                   )}
                 </div>
-            )}
+            </div>
         </div>
 
-        {/* Química - Padronizado para Slate/Emerald */}
+        {/* Parâmetros Químicos */}
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
            <div className="flex justify-between items-center mb-3">
               <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
                 <FlaskConical className="w-4 h-4 text-emerald-600" /> Parâmetros Químicos
               </h3>
            </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+           <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                  <Atom className="w-3 h-3 text-slate-400" /> Teor de Carbono (%)
+                <label className="block text-xs font-normal text-slate-700 mb-1 flex items-center gap-1">
+                  <Atom className="w-3 h-3 text-slate-400" /> Carbono Orgânico (%)
                 </label>
                 <div className="relative">
                   <input
                     type="number"
                     step="0.01"
-                    min="0"
-                    max="100"
                     value={values.carbonContent}
                     onChange={(e) => handleChange('carbonContent', Number(e.target.value))}
-                    className="w-full pl-3 pr-8 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-sm font-medium bg-white"
+                    className="w-full pl-3 pr-8 py-2 rounded-lg border border-slate-300 text-sm font-normal bg-white focus:ring-emerald-500"
                   />
                   <span className="absolute right-3 top-2 text-slate-400 text-xs">%</span>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                   <Flame className="w-3 h-3 text-slate-400" /> Temp. Pirólise (°C)
+                </label>
+                <input
+                  type="number"
+                  value={values.pyrolysisTemp}
+                  onChange={(e) => handleChange('pyrolysisTemp', Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-normal bg-white"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
@@ -311,30 +291,26 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                 <input
                   type="number"
                   step="0.01"
-                  min="0"
-                  max="3.0"
                   value={values.hcRatio}
                   onChange={(e) => handleChange('hcRatio', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 text-sm bg-white focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-normal bg-white"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                   <Flame className="w-3 h-3 text-slate-400" /> Temp. Pirólise (°C)
+                   <Droplet className="w-3 h-3 text-slate-400" /> Razão O/C (molar)
                 </label>
                 <input
                   type="number"
-                  step="1"
-                  min="0"
-                  value={values.pyrolysisTemp}
-                  onChange={(e) => handleChange('pyrolysisTemp', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 text-sm bg-white focus:ring-emerald-500"
+                  step="0.01"
+                  value={values.ocRatio}
+                  onChange={(e) => handleChange('ocRatio', Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-normal bg-white"
                 />
               </div>
            </div>
         </div>
 
-        {/* Solo - Padronizado e com Icone */}
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
           <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
              <Thermometer className="w-4 h-4 text-emerald-600" /> Temperatura do Solo
@@ -348,9 +324,7 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                    type="button"
                    onClick={() => toggleSoilTemp(temp)}
                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-2 ${
-                     isSelected 
-                     ? 'bg-slate-800 text-white border-slate-800 shadow-md' 
-                     : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:bg-slate-50'
+                     isSelected ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200'
                    }`}
                  >
                    {isSelected ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-slate-300"></div>}
@@ -361,23 +335,22 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
           </div>
         </div>
 
-        {/* Autorização de Dados */}
         <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
            <input 
               type="checkbox" 
               id="dataAuth"
               checked={values.dataAuthorization}
               onChange={(e) => handleChange('dataAuthorization', e.target.checked)}
-              className="mt-1 w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 shrink-0"
+              className="mt-1 w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
            />
-           <label htmlFor="dataAuth" className="text-xs text-slate-600 leading-snug cursor-pointer">
-              Autorizo que os dados de minha amostra de biochar sejam incorporados à biblioteca de biochars do Núcleo de Pesquisa em Economia de Baixo Carbono (NPCO2), com o objetivo de aprimorar a base científica dessa temática no país.
+           <label htmlFor="dataAuth" className="text-xs text-slate-600 leading-snug cursor-pointer font-normal">
+              Autorizo o uso dos dados para a biblioteca NPCO2/UFERSA & LAPIS/IFCE.
            </label>
         </div>
 
         <button
           type="submit"
-          className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95"
         >
           Calcular Resultados
           <ArrowRight className="w-4 h-4" />

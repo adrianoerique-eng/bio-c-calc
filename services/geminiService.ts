@@ -8,7 +8,7 @@ export const generateBiocharReport = async (data: CalculationResult): Promise<st
     return "Chave da API não encontrada.";
   }
 
-  // Simplificando o envio de dados para o prompt (pegando o primeiro cenário como principal)
+  // Pegando o primeiro cenário como principal para a análise
   const mainScenario = data.scenarios[0];
   const p100 = mainScenario.dataPoints.find(p => p.year === 100);
 
@@ -31,7 +31,7 @@ export const generateBiocharReport = async (data: CalculationResult): Promise<st
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
     return response.text || "Sem resposta.";
