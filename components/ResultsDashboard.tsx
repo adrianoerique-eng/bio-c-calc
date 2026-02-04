@@ -5,8 +5,6 @@ import {
   ScatterChart, Scatter, ZAxis, ReferenceArea, Label
 } from 'recharts';
 import { Sparkles, Calculator, Clock, Printer, Eye, X, Activity, TrendingUp, ClipboardCheck } from 'lucide-react';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
 
 interface ResultsDashboardProps {
   data: CalculationResult | null;
@@ -120,14 +118,14 @@ const TechnicalAnalysisCard = ({ inputs }: { inputs: CalculatorInputs }) => {
         ANÁLISE TÉCNICA DO BIOCHAR
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-slate-600 leading-relaxed text-sm">
-        <div className="text-justify">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-slate-600 leading-relaxed text-sm text-justify">
+        <div>
           <p>
             <span className="font-bold text-slate-800 block mb-1 uppercase tracking-tighter">Caracterização</span>
             O biochar analisado, proveniente de {biomassType}, apresenta um teor de carbono de {carbonContent}% e uma razão H/C molar de {hcRatio.toFixed(2)}.
           </p>
         </div>
-        <div className="text-justify">
+        <div>
           <p>
             <span className="font-bold text-slate-800 block mb-1 uppercase tracking-tighter">Estabilidade ({level})</span>
             {stabilityDesc}
@@ -386,21 +384,24 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
       return;
     }
 
-    const opt = {
-      margin: 10,
-      filename: `Relatorio-Biochar-${data.inputs.sampleName.replace(/\s+/g, '-')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        letterRendering: true,
-        logging: false
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
     try {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // @ts-ignore
+      const html2pdfModule = await import('html2pdf.js');
+      const html2pdf = html2pdfModule.default;
+
+      const opt = {
+        margin: 10,
+        filename: `Relatorio-Biochar-${data.inputs.sampleName.replace(/\s+/g, '-')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error("Falha ao gerar arquivo PDF, tentando impressão nativa:", err);
