@@ -9,14 +9,13 @@ import { generateBiocharReport } from '../services/geminiService';
 
 interface ResultsDashboardProps { data: CalculationResult | null; }
 
-// Função auxiliar para limpar o texto da IA (remove **, aspas e notações matemáticas como $F_perm$)
 const cleanAiText = (text: string) => {
   if (!text) return '';
   return text
-    .replace(/\*\*/g, '')      // Remove negritos markdown
-    .replace(/"/g, '')         // Remove aspas
-    .replace(/\$.*?\$/g, '')   // Remove fórmulas matemáticas entre $ $ (ex: $F_{perm}$)
-    .replace(/\\/g, '')        // Remove barras invertidas residuais
+    .replace(/\*\*/g, '')
+    .replace(/"/g, '')
+    .replace(/\$.*?\$/g, '')
+    .replace(/\\/g, '')
     .trim();
 };
 
@@ -86,8 +85,13 @@ const TechnicalAnalysisCard = ({ inputs, aiAnalysis, isAiLoading }: { inputs: Ca
         </div>
       </div>
 
-      <div className="border-t border-slate-100 pt-8">
-        {aiAnalysis ? (
+      {isAiLoading ? (
+        <div className="border-t border-slate-100 pt-8 flex flex-col items-center justify-center gap-3 text-slate-400 text-xs py-6 animate-pulse">
+          <Sparkles className="w-6 h-6" />
+          <span>Processando análise científica...</span>
+        </div>
+      ) : aiAnalysis ? (
+        <div className="border-t border-slate-100 pt-8">
           <div className="bg-emerald-50/40 rounded-2xl p-6 border border-emerald-100/50 animate-fade-in">
             <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs mb-4 uppercase tracking-wider">
               <Sparkles className="w-4 h-4" /> Insight Técnico
@@ -96,13 +100,8 @@ const TechnicalAnalysisCard = ({ inputs, aiAnalysis, isAiLoading }: { inputs: Ca
               {cleanAiText(aiAnalysis)}
             </p>
           </div>
-        ) : isAiLoading ? (
-          <div className="flex flex-col items-center justify-center gap-3 text-slate-400 text-xs py-10 animate-pulse">
-            <Sparkles className="w-6 h-6" />
-            <span>Processando interpretação técnica...</span>
-          </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -145,14 +144,14 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
 
   useEffect(() => {
     if (data) {
+      setAiAnalysis(''); // Reseta ao mudar os dados
       const fetchAiInsight = async () => {
         setIsAiLoading(true);
         try {
           const insight = await generateBiocharReport(data);
           setAiAnalysis(insight);
         } catch (err) {
-          console.error("AI Analysis failed:", err);
-          setAiAnalysis("Falha ao obter análise técnica.");
+          setAiAnalysis("");
         } finally { setIsAiLoading(false); }
       };
       fetchAiInsight();
