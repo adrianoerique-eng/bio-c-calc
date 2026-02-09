@@ -88,12 +88,12 @@ const TechnicalAnalysisCard = ({ inputs, aiAnalysis, isAiLoading }: { inputs: Ca
 
       {isAiLoading ? (
         <div className="border-t border-slate-100 pt-8 flex flex-col items-center justify-center gap-3 text-slate-400 text-xs py-6 animate-pulse">
-          <Sparkles className="w-6 h-6" />
-          <span>Interpretando parâmetros científicos...</span>
+          <Sparkles className="w-6 h-6 animate-spin-slow" />
+          <span>Processando insight científico via IA...</span>
         </div>
       ) : aiAnalysis ? (
-        <div className="border-t border-slate-100 pt-8">
-          <div className="bg-emerald-50/40 rounded-2xl p-6 border border-emerald-100/50 animate-fade-in">
+        <div className="border-t border-slate-100 pt-8 animate-fade-in">
+          <div className="bg-emerald-50/40 rounded-2xl p-6 border border-emerald-100/50">
             <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs mb-4 uppercase tracking-wider">
               <Sparkles className="w-4 h-4" /> Insight Técnico
             </div>
@@ -152,9 +152,11 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
           const insight = await generateBiocharReport(data);
           setAiAnalysis(insight);
         } catch (err) {
-          console.error("Dashboard Insight Fetch Fail:", err);
+          console.error("Dashboard Fetch Insight Fail:", err);
           setAiAnalysis("");
-        } finally { setIsAiLoading(false); }
+        } finally { 
+          setIsAiLoading(false); 
+        }
       };
       fetchAiInsight();
     }
@@ -225,7 +227,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
           </div>
           <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
             <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-8 flex items-center gap-3"><Activity className="w-5 h-5 text-emerald-600" /> Van Krevelen</h3>
-            <div className="max-w-4xl mx-auto"><VanKleveDiagram inputs={data.inputs} /></div>
+            <div className="max-w-4xl mx-auto"><VanKrevelenDiagram inputs={data.inputs} /></div>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
             <TechnicalAnalysisCard inputs={data.inputs} aiAnalysis={aiAnalysis} isAiLoading={isAiLoading} />
@@ -234,7 +236,5 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     </div>
   );
 };
-
-const VanKleveDiagram = VanKrevelenDiagram;
 
 export default ResultsDashboard;
