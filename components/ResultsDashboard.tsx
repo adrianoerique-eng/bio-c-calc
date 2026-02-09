@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { CalculationResult, CalculatorInputs } from '../types';
 import { 
@@ -88,7 +89,7 @@ const TechnicalAnalysisCard = ({ inputs, aiAnalysis, isAiLoading }: { inputs: Ca
       {isAiLoading ? (
         <div className="border-t border-slate-100 pt-8 flex flex-col items-center justify-center gap-3 text-slate-400 text-xs py-6 animate-pulse">
           <Sparkles className="w-6 h-6" />
-          <span>Processando análise científica...</span>
+          <span>Interpretando parâmetros científicos...</span>
         </div>
       ) : aiAnalysis ? (
         <div className="border-t border-slate-100 pt-8">
@@ -144,13 +145,14 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
 
   useEffect(() => {
     if (data) {
-      setAiAnalysis(''); // Reseta ao mudar os dados
+      setAiAnalysis('');
       const fetchAiInsight = async () => {
         setIsAiLoading(true);
         try {
           const insight = await generateBiocharReport(data);
           setAiAnalysis(insight);
         } catch (err) {
+          console.error("Dashboard Insight Fetch Fail:", err);
           setAiAnalysis("");
         } finally { setIsAiLoading(false); }
       };
@@ -223,7 +225,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
           </div>
           <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
             <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-8 flex items-center gap-3"><Activity className="w-5 h-5 text-emerald-600" /> Van Krevelen</h3>
-            <div className="max-w-4xl mx-auto"><VanKrevelenDiagram inputs={data.inputs} /></div>
+            <div className="max-w-4xl mx-auto"><VanKleveDiagram inputs={data.inputs} /></div>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
             <TechnicalAnalysisCard inputs={data.inputs} aiAnalysis={aiAnalysis} isAiLoading={isAiLoading} />
@@ -232,5 +234,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data }) => {
     </div>
   );
 };
+
+const VanKleveDiagram = VanKrevelenDiagram;
 
 export default ResultsDashboard;
