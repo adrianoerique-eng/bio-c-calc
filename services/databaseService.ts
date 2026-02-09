@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { CalculatorInputs } from '../types';
 
@@ -18,7 +19,7 @@ const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
   : null;
 
 export const saveResearchData = async (inputs: CalculatorInputs, calculatedBiocharMass: number) => {
-  if (!inputs.dataAuthorization || !supabase) {
+  if (!supabase) {
     return;
   }
 

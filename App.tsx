@@ -12,11 +12,9 @@ const App: React.FC = () => {
   const handleCalculate = (inputs: CalculatorInputs) => {
     const calcResult = calculateSequestration(inputs);
     setResult(calcResult);
-
-    if (inputs.dataAuthorization) {
-       saveResearchData(inputs, calcResult.totalBiocharMass)
-         .catch(err => console.error("Falha silenciosa ao salvar dados:", err));
-    }
+    
+    // Save to research database if user authorized it
+    saveResearchData(inputs, calcResult.totalBiocharMass);
   };
 
   return (
@@ -50,7 +48,6 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Ajustado de col-span-4 para col-span-5 para dar mais largura aos inputs */}
           <div className="lg:col-span-5 xl:col-span-5 no-print">
              <div className="sticky top-24 space-y-6">
                 <InputForm onCalculate={handleCalculate} />
@@ -70,7 +67,6 @@ const App: React.FC = () => {
              </div>
           </div>
 
-          {/* Ajustado de col-span-8 para col-span-7 */}
           <div className="lg:col-span-7 xl:col-span-7">
             <ResultsDashboard data={result} />
           </div>
@@ -80,7 +76,7 @@ const App: React.FC = () => {
 
       <footer className="bg-white border-t border-slate-200 mt-12 py-8 no-print">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm font-semibold text-slate-600">Produto desenvolvido por NPCO2/UFERSA e LAPIS/IFCE</p>
+          <p className="text-sm font-semibold text-slate-600">Produto desenvolvido por NPCO2/UFERSA</p>
           <p className="text-xs text-slate-400 mt-2">© 2026 BioC-Calc. Todos os direitos reservados.</p>
         </div>
       </footer>

@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
-import { BiomassType, CalculatorInputs, AcademicLevel } from '../types';
+import { BiomassType, CalculatorInputs, AcademicLevel, MassUnit } from '../types';
 import { 
   FlaskConical, Scale, ArrowRight, CheckCircle2, Thermometer, Tag, User, 
   Building2, BookOpenText, GraduationCap, MapPin,
-  Fingerprint, Map, Leaf, Weight, Atom, Orbit, Percent, Award, Flame, Droplet
+  Fingerprint, Map, Leaf, Weight, Atom, Orbit, Award, Flame, Droplet
 } from 'lucide-react';
 
 interface InputFormProps {
@@ -23,13 +24,13 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
     biomassType: BiomassType.CASHEW_SHELL,
     isDirectBiocharInput: true,
     massInput: 1,
+    massUnit: MassUnit.TON,
     biocharYield: 30,
     pyrolysisTemp: 500,
     carbonContent: 75.0, 
     hcRatio: 0.35,
     ocRatio: 0.20, 
-    selectedSoilTemps: [14.9],
-    dataAuthorization: false
+    selectedSoilTemps: [14.9]
   });
 
   const soilTempOptions = [5, 10, 10.9, 14.9, 15, 20, 25];
@@ -163,7 +164,7 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
             </div>
 
             <div className="pt-2 border-t border-slate-200 mt-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                     <Fingerprint className="w-3 h-3 text-slate-400" /> ID da Amostra
@@ -216,37 +217,53 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                   </button>
                </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-1">
-                  <label className="block text-[10px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                     <Weight className="w-3 h-3 text-slate-400" /> {values.isDirectBiocharInput ? 'Qtd. Biochar (t)' : 'Qtd. Biomassa (t)'}
-                  </label>
+            
+            <div className="space-y-1">
+              <label className="block text-[10px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                 <Weight className="w-3 h-3 text-slate-400" /> {values.isDirectBiocharInput ? 'Qtd. Biochar' : 'Qtd. Biomassa'}
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex w-full max-w-[160px] shrink-0">
                   <input
                     type="number"
                     step="any"
                     min="0"
                     value={values.massInput}
                     onChange={(e) => handleChange('massInput', Number(e.target.value))}
-                    className="w-full px-2 py-2 rounded border border-slate-300 text-sm focus:ring-emerald-500 font-normal"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-l-lg border border-slate-300 text-sm focus:ring-1 focus:ring-emerald-500 outline-none font-normal"
                   />
+                  <select
+                    value={values.massUnit}
+                    onChange={(e) => handleChange('massUnit', e.target.value as MassUnit)}
+                    className="w-16 px-1 py-2 rounded-r-lg border border-l-0 border-slate-300 bg-slate-100 text-xs font-bold text-slate-700 focus:ring-1 focus:ring-emerald-500 outline-none cursor-pointer"
+                  >
+                    <option value={MassUnit.GRAM}>g</option>
+                    <option value={MassUnit.KILOGRAM}>kg</option>
+                    <option value={MassUnit.TON}>t</option>
+                  </select>
                 </div>
-                <div className="col-span-1">
-                   {!values.isDirectBiocharInput ? (
-                     <>
-                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Rendimento (%)</label>
-                      <input
-                        type="number"
-                        value={values.biocharYield}
-                        onChange={(e) => handleChange('biocharYield', Number(e.target.value))}
-                        className="w-full px-2 py-2 rounded border border-slate-300 text-sm font-normal"
-                      />
-                     </>
+                
+                <div className="flex-1 min-w-[120px]">
+                   {values.isDirectBiocharInput ? (
+                      <p className="text-[9px] text-slate-400 italic leading-tight">
+                         Insira a massa final seca aplicada ao solo.
+                      </p>
                    ) : (
-                     <div className="flex items-end h-full pb-2">
-                        <span className="text-[9px] text-slate-400 italic">Massa final seca para aplicação.</span>
-                     </div>
+                      <div className="flex items-center gap-2">
+                        <div className="relative w-24">
+                          <input
+                            type="number"
+                            value={values.biocharYield}
+                            onChange={(e) => handleChange('biocharYield', Number(e.target.value))}
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-normal pr-6 outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                          <span className="absolute right-2 top-1.5 text-slate-400 text-[10px]">% Rend.</span>
+                        </div>
+                        <p className="text-[8px] text-slate-400 italic leading-tight max-w-[80px]">Massa estimada via rendimento.</p>
+                      </div>
                    )}
                 </div>
+              </div>
             </div>
         </div>
 
@@ -333,19 +350,6 @@ const InputForm: React.FC<InputFormProps> = ({ onCalculate }) => {
                );
             })}
           </div>
-        </div>
-
-        <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-           <input 
-              type="checkbox" 
-              id="dataAuth"
-              checked={values.dataAuthorization}
-              onChange={(e) => handleChange('dataAuthorization', e.target.checked)}
-              className="mt-1 w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-           />
-           <label htmlFor="dataAuth" className="text-xs text-slate-600 leading-snug cursor-pointer font-normal">
-              Autorizo o uso dos dados para a biblioteca NPCO2/UFERSA & LAPIS/IFCE.
-           </label>
         </div>
 
         <button

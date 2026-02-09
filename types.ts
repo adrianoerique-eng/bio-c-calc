@@ -1,17 +1,13 @@
+
 export enum BiomassType {
-  // Solicitados
   ELEPHANT_GRASS = 'Capim Elefante',
   SORGHUM = 'Sorgo',
   CASHEW_SHELL = 'Casca da Castanha de Caju',
   SUGARCANE_BAGASSE = 'Bagaço de Cana',
   CARNAUBA = 'Carnaúba',
-
-  // Sugestões Regionais (Nordeste)
   COCONUT_HUSK = 'Casca de Coco',
   BABASSU = 'Casca de Babaçu',
   CASSAVA = 'Resíduos de Mandioca',
-  
-  // Genéricos
   WOOD = 'Madeira/Lenha',
   MANURE = 'Esterco',
   OTHER = 'Outra Biomassa'
@@ -25,8 +21,13 @@ export enum AcademicLevel {
   OTHER = 'Outro'
 }
 
+export enum MassUnit {
+  GRAM = 'g',
+  KILOGRAM = 'kg',
+  TON = 't'
+}
+
 export interface CalculatorInputs {
-  // Metadados do Projeto
   studentName: string;
   level: AcademicLevel;
   researchTitle: string;
@@ -35,20 +36,16 @@ export interface CalculatorInputs {
   city: string;
   state: string;
   sampleName: string;
-  
-  // Dados de Entrada
   biomassType: BiomassType;
   isDirectBiocharInput: boolean;
   massInput: number;
+  massUnit: MassUnit;
   biocharYield: number;
   pyrolysisTemp: number;
   carbonContent: number;
-  hcRatio: number; // Razão Molar H/Corg
-  ocRatio: number; // Novo: Razão Molar O/Corg
+  hcRatio: number;
+  ocRatio: number;
   selectedSoilTemps: number[];
-  
-  // Termos
-  dataAuthorization: boolean;
 }
 
 export interface TimePoint {
@@ -67,7 +64,7 @@ export interface SoilTempScenario {
 export interface CalculationResult {
   inputs: CalculatorInputs;
   scenarios: SoilTempScenario[];
-  totalBiocharMass: number;
+  totalBiocharMass: number; // Sempre em Toneladas para o cálculo
   totalCarbonMass: number;
   efficiencyRatio: number;
 }
